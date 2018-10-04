@@ -1,0 +1,22 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1538681572922.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "4213206577",
+    "id" : "BB525D17",
+    "lastKnownWriteTime" : 1538683000,
+    "last_content_update" : 1538683000146,
+    "path" : "~/GitHub/PepSeq/R/Pulldown_Visualization.R",
+    "project_path" : "R/Pulldown_Visualization.R",
+    "properties" : {
+        "cursorPosition" : "61,0",
+        "scrollLine" : "18"
+    },
+    "relative_order" : 3,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

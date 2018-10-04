@@ -1,0 +1,32 @@
+---
+title: "Pulldown Visualization"
+author: "Derek Sonderegger"
+date: "10/3/2018"
+output: pdf_document
+---
+
+```{r}
+library(devtools)
+install_github('dereksonderegger/PepSeq')  # install Derek's PepSeq tools
+
+library(tidyverse)   # load the usual set of data processing tools
+library(PepSeq)      # load Derek's library of routines
+
+# Just using the defaults
+plot_pulldown( './counts_annotated.csv' )
+
+# specify the height and width of the output pdf
+plot_pulldown( './counts_annotated.csv', height=10, width=100 )
+
+
+# The function returns the data used to create the graph and
+# we can modify the image if we wanted
+data <- plot_pulldown( './counts_annotated.csv' )
+
+data %>% ggplot(., aes(x=position, y=signal)) +
+  geom_point(size=.2) +
+  facet_grid( Group*Treatment*Rep ~ protein_ID, scales='free', space='free_x') +
+  ggsave('counts.pdf', width = 100, height=4, limitsize=FALSE) +
+  theme_bw()
+
+```

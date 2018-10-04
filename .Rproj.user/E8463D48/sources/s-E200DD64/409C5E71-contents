@@ -1,0 +1,37 @@
+#' Create a scatterplot representing a pull-down
+#'
+plot_pulldown <- function( input_file, output_file='pulldown.pdf', 
+                           height=NULL, width=NULL, 
+                           standardize.method='additive' ){
+  
+  df <- read.csv(input_file) %>%
+    select( protein_ID, position, starts_with('X')) %>%                           # count column names all start with an X
+    gather(key='Type', value='Value', -protein_ID, -position) %>%                 # convert to a _long_ orientation
+    drop_na() %>%                                                                 # Get rid of missing values
+    separate(Type, c('Group','Cleave','Treatment','Rep'), sep=fixed('_')) %>%     # Break column name into component information
+    spread(key=Cleave, value=Value) %>%                                           # Spread CleaveState/Value into Cleaved/Uncleaved
+    mutate( signal = PepSeq::standardize(.$Cleaved, .$Uncleaved,                  ##
+                                          type = standardize.method)) %>%         ## standardize to combine cleaved/uncleaved values
+    mutate( Group = factor(Group),                                                # clean-up in preparation for ggplot facets
+            Treatment = factor(Treatment),                                        #
+            Rep = factor(Rep) )
+  
+  combos <- expand.grid(Group=levels(df$Group),                                   # figure out how many sequences
+                        Trt=levels(df$Treatment),                                 # and treatment combinations we have
+                        Rep=levels(df$Rep))                                       # so we know how tall/wide the resulting image 
+  n <- nrow(df) / nrow(combos)                                                    # will approximately be
+  p <- nrow(combos)
+
+  if( is.null(height) ){ height=p }                                               # Default values for height/width
+  if( is.null(width) ){ width = n/1000 }                   
+  
+  df %>% 
+    ggplot(., aes(x=position, y=signal)) + 
+    geom_point(size=.2) + 
+    facet_grid( Group*Treatment*Rep ~ protein_ID, scales='free', space='free_x') +
+    #facet_grid(Group*Treatment*Rep ~ Protein_ID) +
+    ggsave(output_file, width = 100, height=4, limitsize=FALSE)
+
+    
+}
+

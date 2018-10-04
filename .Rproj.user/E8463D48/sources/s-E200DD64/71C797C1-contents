@@ -16,7 +16,7 @@ library(PepSeq)      # load Derek's library of routines
 plot_pulldown( './counts_annotated.csv' )
 
 # specify the height and width of the output pdf
-plot_pulldown( './counts_annotated.csv', height=10, width=100 )
+plot_pulldown( './counts_annotated.csv', height=10, width=1000 )
 
 
 # The function returns the data used to create the graph and

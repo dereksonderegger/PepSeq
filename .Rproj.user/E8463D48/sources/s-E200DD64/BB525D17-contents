@@ -58,7 +58,7 @@ plot_pulldown <- function( input_file, output_file='pulldown.pdf',
   df %>%
     ggplot(., aes(x=position, y=signal)) +
     geom_point(size=.2) +
-    facet_grid( Group*Treatment*Rep ~ protein_ID, scales='free', space='free_x') +
+    facet_grid( Group*Treatment*Rep ~ protein_ID, scales='free_x', space='free_x') +
     ggsave(output_file, width = width, height=height, limitsize=FALSE)
 
   invisible(df)  # return the data (invisibly!)

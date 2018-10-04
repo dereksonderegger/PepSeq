@@ -21,12 +21,14 @@ plot_pulldown( './counts_annotated.csv', height=10, width=1000 )
 
 # The function returns the data used to create the graph and
 # we can modify the image if we wanted
-data <- plot_pulldown( './counts_annotated.csv' )
+data <- plot_pulldown( './counts_annotated.csv', output_file = 'Counts.jpg' )
 
 data %>% ggplot(., aes(x=position, y=signal)) +
   geom_point(size=.2) +
-  facet_grid( Group*Treatment*Rep ~ protein_ID, scales='free', space='free_x') +
+  facet_grid( Group*Treatment*Rep ~ protein_ID, scales='free_x', space='free_x') +
   ggsave('counts.pdf', width = 100, height=4, limitsize=FALSE) +
   theme_bw()
+
+write.csv(data, file = 'Modified_Counts.csv')
 
 ```

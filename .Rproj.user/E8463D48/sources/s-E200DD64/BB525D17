@@ -5,15 +5,15 @@
     "dirty" : false,
     "encoding" : "UTF-8",
     "folds" : "",
-    "hash" : "4239829505",
+    "hash" : "1017888305",
     "id" : "BB525D17",
-    "lastKnownWriteTime" : 1538688519,
-    "last_content_update" : 1538688519102,
+    "lastKnownWriteTime" : 1538689558,
+    "last_content_update" : 1538689558134,
     "path" : "~/GitHub/PepSeq/R/Pulldown_Visualization.R",
     "project_path" : "R/Pulldown_Visualization.R",
     "properties" : {
-        "cursorPosition" : "55,37",
-        "scrollLine" : "40"
+        "cursorPosition" : "60,64",
+        "scrollLine" : "44"
     },
     "relative_order" : 3,
     "source_on_save" : false,

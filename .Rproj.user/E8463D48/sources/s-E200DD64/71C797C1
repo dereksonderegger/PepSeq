@@ -5,15 +5,15 @@
     "dirty" : false,
     "encoding" : "UTF-8",
     "folds" : "",
-    "hash" : "2190334275",
+    "hash" : "1907484146",
     "id" : "71C797C1",
-    "lastKnownWriteTime" : 1538687750,
-    "last_content_update" : 1538687750055,
+    "lastKnownWriteTime" : 1538689535,
+    "last_content_update" : 1538689535764,
     "path" : "~/Dropbox/NAU/Research/PepSeq/Pulldown Visualization/Pulldown Visualization.Rmd",
     "project_path" : null,
     "properties" : {
-        "cursorPosition" : "19,0",
-        "scrollLine" : "0"
+        "cursorPosition" : "27,62",
+        "scrollLine" : "7"
     },
     "relative_order" : 4,
     "source_on_save" : false,

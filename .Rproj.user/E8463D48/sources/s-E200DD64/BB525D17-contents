@@ -24,15 +24,18 @@
 #'
 #' @param width The width (in inches) of the resulting file. If NULL, the default
 #'              is the number of sequences / 1000.
+#' @param ymin The minimum value of the response to be shown.  If NULL, all the data is shown.
+#' @param ymax The maximum value of the response to be shown.  If NULL, all the data is shown.
 #'
-#' @param standize.method The method by which the cleaved and uncleaved read
+#' @param standardize.method The method by which the cleaved and uncleaved read
 #'                        counts are combined. Valid choices are 'additive' or
 #'                        'multiplicative'. The default is additive.
 #'
 #' @export
 plot_pulldown <- function( input_file, output_file='pulldown.pdf',
                            height=NULL, width=NULL,
-                           standardize.method='additive' ){
+                           standardize.method='additive',
+                           ymin=NULL, ymax=NULL){
 
   df <- read.csv(input_file) %>%
     select( protein_ID, position, starts_with('X')) %>%                           # count column names all start with an X
@@ -55,10 +58,14 @@ plot_pulldown <- function( input_file, output_file='pulldown.pdf',
   if( is.null(height) ){ height=p+3 }                                             # Default values for height/width
   if( is.null(width) ){ width = n/100 }
 
+  if( is.null(ymin) ){ ymin=min(df$signal) }
+  if( is.null(ymax) ){ ymax=max(df$signal) }
+
   df %>%
     ggplot(., aes(x=position, y=signal)) +
     geom_point(size=.2) +
     facet_grid( Group*Treatment*Rep ~ protein_ID, scales='free_x', space='free_x') +
+    coord_cartesian(ylim = c(ymin, ymax)) +
     ggsave(output_file, width = width, height=height, limitsize=FALSE)
 
   invisible(df)  # return the data (invisibly!)

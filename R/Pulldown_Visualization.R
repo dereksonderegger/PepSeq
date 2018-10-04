@@ -53,7 +53,7 @@ plot_pulldown <- function( input_file, output_file='pulldown.pdf',
   p <- nrow(combos)
 
   if( is.null(height) ){ height=p+3 }                                             # Default values for height/width
-  if( is.null(width) ){ width = n/1000 }
+  if( is.null(width) ){ width = n/100 }
 
   df %>%
     ggplot(., aes(x=position, y=signal)) +

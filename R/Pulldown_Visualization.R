@@ -66,12 +66,13 @@ plot_pulldown <- function( input_file, output_file='pulldown.pdf',
   if( is.null(ymin) ){ ymin=min(df$signal) }
   if( is.null(ymax) ){ ymax=max(df$signal) }
 
-  df %>%
+  P <- df %>%
     ggplot(., aes(x=position, y=signal)) +
     geom_point(size=.2) +
     facet_grid( Group*Treatment*Rep ~ protein_ID, scales='free_x', space='free_x') +
-    coord_cartesian(ylim = c(ymin, ymax)) +
-    ggsave(output_file, width = width, height=height, limitsize=FALSE)
+    coord_cartesian(ylim = c(ymin, ymax))
+
+  ggsave(plot=P, filename=output_file, width = width, height=height, limitsize=FALSE)
 
   invisible(df)  # return the data (invisibly!)
 }

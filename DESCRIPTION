@@ -4,7 +4,7 @@ Title: Tools for analyzing Peptide Sequencing results
 Version: 0.1.0
 Description: This package is a set of tools developed by the Pathogen and Microbiome Institute at Northern Arizona University as part of the PepSeq project.
 Authors@R: person("Derek", "Sonderegger", email="derek.sonderegger@gmail.com", role=c('aut','cre')) 
-Depends: R (>= 2.4.0), tidyr, dplyr, ggplot2, stringr
+Depends: R (>= 2.4.0), tidyr, dplyr, ggplot2, stringr, shiny
 Imports: partykit
 License: GPL-3
 Encoding: UTF-8

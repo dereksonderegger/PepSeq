@@ -24,8 +24,12 @@
 #'
 #' @param width The width (in inches) of the resulting file. If NULL, the default
 #'              is the number of sequences / 1000.
+#'
 #' @param ymin The minimum value of the response to be shown.  If NULL, all the data is shown.
+#'
 #' @param ymax The maximum value of the response to be shown.  If NULL, all the data is shown.
+#'
+#' @param read_indicator What character string indicates the column is data.
 #'
 #' @param standardize.method The method by which the cleaved and uncleaved read
 #'                        counts are combined. Valid choices are 'additive' or
@@ -35,10 +39,11 @@
 plot_pulldown <- function( input_file, output_file='pulldown.pdf',
                            height=NULL, width=NULL,
                            standardize.method='additive',
-                           ymin=NULL, ymax=NULL){
+                           ymin=NULL, ymax=NULL,
+                           read_indicator = 'X'){
 
   df <- read.csv(input_file) %>%
-    select( protein_ID, position, starts_with('X')) %>%                           # count column names all start with an X
+    select( protein_ID, position, starts_with(read_indicator)) %>%                # count column names all start with an X
     gather(key='Type', value='Value', -protein_ID, -position) %>%                 # convert to a _long_ orientation
     drop_na() %>%                                                                 # Get rid of missing values
     separate(Type, c('Group','Cleave','Treatment','Rep'), sep=fixed('_')) %>%     # Break column name into component information

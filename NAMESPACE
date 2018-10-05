@@ -2,4 +2,5 @@
 
 export(changePoint)
 export(plot_pulldown)
+export(plot_pulldown_Shiny)
 export(standardize)

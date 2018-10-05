@@ -5,7 +5,8 @@
 \title{Create a scatterplot representing a pull-down}
 \usage{
 plot_pulldown(input_file, output_file = "pulldown.pdf", height = NULL,
-  width = NULL, standardize.method = "additive")
+  width = NULL, standardize.method = "additive", ymin = NULL,
+  ymax = NULL, read_indicator = "X")
 }
 \arguments{
 \item{input_file}{The input .csv file. It can be a full path to a file or a
@@ -22,9 +23,15 @@ plus 3.}
 \item{width}{The width (in inches) of the resulting file. If NULL, the default
 is the number of sequences / 1000.}
 
-\item{standize.method}{The method by which the cleaved and uncleaved read
+\item{standardize.method}{The method by which the cleaved and uncleaved read
 counts are combined. Valid choices are 'additive' or
 'multiplicative'. The default is additive.}
+
+\item{ymin}{The minimum value of the response to be shown.  If NULL, all the data is shown.}
+
+\item{ymax}{The maximum value of the response to be shown.  If NULL, all the data is shown.}
+
+\item{read_indicator}{What character string indicates the column is data.}
 }
 \description{
 The pulldown script created by John Altin creates a .csv file

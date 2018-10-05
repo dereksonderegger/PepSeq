@@ -31,24 +31,20 @@ plot_pulldown_Shiny <- function(input_file,
 
   ymin=floor(   min(df$signal))
   ymax=ceiling( max(df$signal))
-
+  n <- max(df$index)
 
   # create the UI
   ui <- fluidPage(
     titlePanel("Peptide Sequence Exploration"),
     sidebarLayout(
       # Sidebar panel for inputs ----
-      sidebarPanel(
-        sliderInput(inputId = "window_width",
-                    label = "Window Width:",
-                    min = 1,
-                    max = n,
-                    value = 1000),
-        sliderInput(inputId = 'window_center',
-                    label = 'Window Center',
-                    min=1,
-                    max=n,
-                    value=500),
+      sidebarPanel(width=2,
+        numericInput(inputId = 'window_width',
+                     label = 'Window Width:',
+                     value = 2000,
+                     min = 1, max=n,
+                     step = 500),
+        uiOutput('window_control'),
         sliderInput(inputId = 'ymin',
                     label = 'y-axis minimum',
                     min=ymin,
@@ -60,7 +56,7 @@ plot_pulldown_Shiny <- function(input_file,
                     max=ymax,
                     value=ymax)
       ),
-      mainPanel(
+      mainPanel(width=10,
         plotOutput(outputId = "Plot")
       )
     )
@@ -69,6 +65,16 @@ plot_pulldown_Shiny <- function(input_file,
 
   # define the server function
   server <- function(input, output) {
+
+    output$window_control <- renderUI({
+      sliderInput(inputId = 'window_center',
+                  label = 'Window Center',
+                  min=1,
+                  max=n,
+                  value = isolate(input$window_center),
+                  step = input$window_width)
+    })
+
 
     output$Plot <- renderPlot({
       xmin <- round(input$window_center - input$window_width/2)

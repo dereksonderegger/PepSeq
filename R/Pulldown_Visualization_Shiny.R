@@ -11,9 +11,9 @@
 #' "XXX_uncleaved" pair, then we standardize the cleaved/uncleaved pair into a single
 #' response.  If the column has no pair, then we don't do any standardization with it.
 #'
-#' @param input_file The input .csv file. It can be a full path to a file or a
+#' @param file The input .csv file. It can be a full path to a file or a
 #'                   relative path from the current working directory.
-#' @param standardize.method The method by which the cleaved and uncleaved read
+#' @param standardize_method The method by which the cleaved and uncleaved read
 #'                        counts are combined. Valid choices are 'additive' or
 #'                        'multiplicative'. The default is additive.
 #' @param read_indicator An argument that identifies what columns are responses
@@ -26,46 +26,18 @@
 #' file <- system.file("extdata", "example_counts.csv", package = "PepSeq")
 #' plot_pulldown_Shiny(file, read_indicator='Y_')
 #'
+#' plot_pulldown_Shiny(file='./counts_annotated.csv')
+#'
 #' @export
-plot_pulldown_Shiny <- function(input_file,
-                                standardize.method='additive',
+plot_pulldown_Shiny <- function(file,
+                                standardize_method='additive',
                                 read_indicator='X',
                                 protein_column = 'protein_ID',
                                 position_column = 'position'){
 
-  input_file = "/Library/Frameworks/R.framework/Versions/3.5/Resources/library/PepSeq/extdata/example_counts.csv"
+  #input_file = "/Library/Frameworks/R.framework/Versions/3.5/Resources/library/PepSeq/extdata/example_counts.csv"
 
-  df <- read.csv(input_file) %>%
-    mutate_( protein_ID = protein_column,
-             position   = position_column)
-  if( is.character( read_indicator )){
-    df <- df %>% select( protein_ID, position, starts_with(read_indicator )  )
-  }else{
-    df <- df %>% select( protein_ID, position,             read_indicator )
-  }
-  df <- df %>%
-    mutate(index = 1:n()) %>%                                                     # create a peptide_ID column
-    gather(key='Type', value='Value', -protein_ID, -position, -index) %>%         # convert to a _long_ orientation
-    drop_na()                                                                     # Get rid of missing values
-  df1 <- df %>%
-    filter(!str_detect(Type, fixed('cleave', ignore_case = TRUE))) %>%
-    spread(key=Type, value=Value)
-  df2 <-
-    df %>% filter( str_detect(Type, fixed('cleave', ignore_case = TRUE))) %>%
-    mutate( Type = stringi::stri_reverse(Type) ) %>%                              # reversing because cleaved/uncleaved is at the end
-    separate(Type, c('Cleave', 'Group'), sep=fixed('_'), extra='merge') %>%       # split on the first '_'
-    mutate(Cleave = stringi::stri_reverse(Cleave),                                # undo my reversing operation
-           Group  = stringi::stri_reverse(Group)) %>%
-    arrange(Group, protein_ID, position, Cleave) %>%
-    mutate(Cleave = str_to_lower(Cleave)) %>%                                     # get rid of non-consistent capitalizations
-    spread(key=Cleave, value=Value) %>%
-    mutate( signal = PepSeq::standardize(.$cleaved, .$uncleaved,                  ##
-                                         type = standardize.method)) %>%          ## standardize to combine cleaved/uncleaved values
-    select(-cleaved, -uncleaved) %>%
-    spread(key=Group, value=signal)
-
-  df <- full_join(df1, df2, by=c('protein_ID', 'position','index')) %>%
-    gather('Group', 'signal', -protein_ID, -position, -index)
+  df <- PepSeq::import_pulldown(file, standardize_method, read_indicator, protein_column, position_column)
 
   Proteins <- df %>%
     group_by(protein_ID) %>%
@@ -73,8 +45,8 @@ plot_pulldown_Shiny <- function(input_file,
               index = min(index))
 
 
-  ymin=floor(   min(df$signal))
-  ymax=ceiling( max(df$signal))
+  ymin=floor(   min(df$signal, na.rm=TRUE))
+  ymax=ceiling( max(df$signal, na.rm=TRUE))
   n <- max(df$index)
 
   # Ctrl <- list(window_start = 1,
@@ -98,11 +70,9 @@ plot_pulldown_Shiny <- function(input_file,
                                choices = levels(df$protein_ID),
                                selected = Proteins %>% pull(protein_ID) %>%.[1] ),
                    numericInput(inputId = 'ymin', label = 'Minimum response:',
-                                value = round(min(df$signal)),
-                                min = round(min(df$signal)), round(max=max(df$signal))),
+                                value = ymin, min = ymin, max=ymax),
                    numericInput(inputId = 'ymax', label = 'Maximum response:',
-                                value = round(max(df$signal)),
-                                min = round(min(df$signal)), round(max=max(df$signal)))
+                                value = ymax, min = ymin, max=ymax)
       ),
       mainPanel(width=10,
                 plotOutput(outputId = "Plot")

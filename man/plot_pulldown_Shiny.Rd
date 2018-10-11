@@ -4,21 +4,22 @@
 \alias{plot_pulldown_Shiny}
 \title{Create a Shiny application showing a scatterplot representing a pull-down}
 \usage{
-plot_pulldown_Shiny(input_file, standardize.method = "additive",
+plot_pulldown_Shiny(file, standardize_method = "additive",
   read_indicator = "X", protein_column = "protein_ID",
   position_column = "position")
 }
 \arguments{
-\item{input_file}{The input .csv file. It can be a full path to a file or a
+\item{file}{The input .csv file. It can be a full path to a file or a
 relative path from the current working directory.}
 
-\item{standardize.method}{The method by which the cleaved and uncleaved read
+\item{standardize_method}{The method by which the cleaved and uncleaved read
 counts are combined. Valid choices are 'additive' or
 'multiplicative'. The default is additive.}
 
 \item{read_indicator}{An argument that identifies what columns are responses
 to be plotted. This could be either a vector of integers
-or a character string indicates the column is response data.}
+or a character string that is at the beginning of all of the
+column names of the response data.}
 
 \item{protein_column}{A character string indicating which column denotes the protein.}
 
@@ -29,4 +30,11 @@ The pulldown script created by John Altin creates a .csv file
 with several columns that gives the number of reads for various
 peptide sequences. This function reads the .csv file and creates
 a Shiny application that allows the user to explore the pulldown.
+}
+\details{
+The input .csv file should have a columns denoting the protein name and location,
+(by default we assume they are labeled `protein_ID` and `position`) and then
+a bunch of response columns.  If the response column has a "XXX_cleaved" and
+"XXX_uncleaved" pair, then we standardize the cleaved/uncleaved pair into a single
+response.  If the column has no pair, then we don't do any standardization with it.
 }

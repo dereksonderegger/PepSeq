@@ -4,12 +4,13 @@
 \alias{plot_pulldown}
 \title{Create a scatterplot representing a pull-down}
 \usage{
-plot_pulldown(input_file, output_file = "pulldown.pdf", height = NULL,
-  width = NULL, standardize.method = "additive", ymin = NULL,
-  ymax = NULL, read_indicator = "X")
+plot_pulldown(file, output_file = "pulldown.pdf", height = NULL,
+  width = NULL, ymin = NULL, ymax = NULL, read_indicator = "X",
+  standardize.method = "additive", protein_column = "protein_ID",
+  position_column = "position")
 }
 \arguments{
-\item{input_file}{The input .csv file. It can be a full path to a file or a
+\item{file}{The input .csv file. It can be a full path to a file or a
 relative path from the current working directory.}
 
 \item{output_file}{The file to save the resulting image. In can be a full
@@ -23,15 +24,22 @@ plus 3.}
 \item{width}{The width (in inches) of the resulting file. If NULL, the default
 is the number of sequences / 1000.}
 
-\item{standardize.method}{The method by which the cleaved and uncleaved read
-counts are combined. Valid choices are 'additive' or
-'multiplicative'. The default is additive.}
-
 \item{ymin}{The minimum value of the response to be shown.  If NULL, all the data is shown.}
 
 \item{ymax}{The maximum value of the response to be shown.  If NULL, all the data is shown.}
 
-\item{read_indicator}{What character string indicates the column is data.}
+\item{read_indicator}{An argument that identifies what columns are responses
+to be plotted. This could be either a vector of integers
+or a character string that is at the beginning of all of the
+column names of the response data.}
+
+\item{standardize.method}{The method by which the cleaved and uncleaved read
+counts are combined. Valid choices are 'additive' or
+'multiplicative'. The default is additive.}
+
+\item{protein_column}{A character string indicating which column denotes the protein.}
+
+\item{position_column}{A character string indicating which column corresponds to the position within a protein.}
 }
 \description{
 The pulldown script created by John Altin creates a .csv file

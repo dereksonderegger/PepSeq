@@ -27,9 +27,9 @@ standardize <- function(cleaved, uncleaved, ref=NULL, type='additive'){
   # small.  Zeros would be a huge problem for the reference.
   # }
   if( type == 'additive' ){
-    out <- (cleaved/sum(cleaved) - uncleaved/sum(uncleaved)) / ( ref / sum(ref) )
+    out <- (cleaved/sum(cleaved, na.rm = TRUE) - uncleaved/sum(uncleaved, na.rm=TRUE)) / ( ref / sum(ref) )
   }else if(type == 'multiplicative'){
-    out <- (cleaved/sum(cleaved)) / (uncleaved/sum(uncleaved))
+    out <- (cleaved/sum(cleaved, na.rm=TRUE)) / (uncleaved/sum(uncleaved, na.rm=TRUE))
   }else{
     stop("type must be either 'additive' or 'multiplicative'")
   }

@@ -5,7 +5,8 @@
 \title{Create a Shiny application showing a scatterplot representing a pull-down}
 \usage{
 plot_pulldown_Shiny(input_file, standardize.method = "additive",
-  read_indicator = "X")
+  read_indicator = "X", protein_column = "protein_ID",
+  position_column = "position")
 }
 \arguments{
 \item{input_file}{The input .csv file. It can be a full path to a file or a
@@ -15,7 +16,13 @@ relative path from the current working directory.}
 counts are combined. Valid choices are 'additive' or
 'multiplicative'. The default is additive.}
 
-\item{read_indicator}{What character string indicates the column is data.}
+\item{read_indicator}{An argument that identifies what columns are responses
+to be plotted. This could be either a vector of integers
+or a character string indicates the column is response data.}
+
+\item{protein_column}{A character string indicating which column denotes the protein.}
+
+\item{position_column}{A character string indicating which column corresponds to the position within a protein.}
 }
 \description{
 The pulldown script created by John Altin creates a .csv file

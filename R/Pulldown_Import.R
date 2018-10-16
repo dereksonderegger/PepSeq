@@ -47,7 +47,7 @@ import_pulldown <- function( file,
     mutate(Cleave = str_to_lower(Cleave)) %>%                                     # get rid of non-consistent capitalizations
     spread(key=Cleave, value=Value) %>%
     mutate( signal = PepSeq::standardize(.$cleaved, .$uncleaved,                  ##
-                                         type = standardize.method)) %>%          ## standardize to combine cleaved/uncleaved values
+                                         type = standardize_method)) %>%          ## standardize to combine cleaved/uncleaved values
     select(-cleaved, -uncleaved) %>%
     spread(key=Group, value=signal)
 

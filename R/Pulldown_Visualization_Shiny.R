@@ -13,7 +13,7 @@
 #'
 #' @param file The input .csv file. It can be a full path to a file or a
 #'                   relative path from the current working directory.
-#' @param standardize_method The method by which the cleaved and uncleaved read
+#' @param standardization_method The method by which the cleaved and uncleaved read
 #'                        counts are combined. Valid choices are 'additive' or
 #'                        'multiplicative'. The default is additive.
 #' @param read_indicator An argument that identifies what columns are responses
@@ -26,18 +26,24 @@
 #' file <- system.file("extdata", "example_counts.csv", package = "PepSeq")
 #' plot_pulldown_Shiny(file, read_indicator='Y_')
 #'
-#' plot_pulldown_Shiny(file='./counts_annotated.csv')
-#'
 #' @export
 plot_pulldown_Shiny <- function(file,
-                                standardize_method='additive',
+                                standardization_method='additive',
                                 read_indicator='X',
                                 protein_column = 'protein_ID',
                                 position_column = 'position'){
 
   #input_file = "/Library/Frameworks/R.framework/Versions/3.5/Resources/library/PepSeq/extdata/example_counts.csv"
+  # Import the data
+  df <- PepSeq::import_pulldown(file, standardization_method, read_indicator, protein_column, position_column)
 
-  df <- PepSeq::import_pulldown(file, standardize_method, read_indicator, protein_column, position_column)
+  # figure out peaks
+  # df <- df %>%
+  #   group_by(Group) %>%
+  #   mutate( Peak = as.integer(identify_peaks(Value, method='PoT')) ) %>%
+  #   mutate( ribbon_ymin = ifelse( Peak == 0, Value, -Inf),
+  #           ribbon_ymax = ifelse( Peak == 0, Value,  Inf) )
+
 
   Proteins <- df %>%
     group_by(protein_ID) %>%
@@ -111,6 +117,7 @@ plot_pulldown_Shiny <- function(file,
       df %>%
         filter( index > xmin, index < xmax ) %>%
         ggplot(., aes(x=position, y=signal)) +
+        # geom_ribbon( alpha=0.4, aes(ymin=ribbon_ymin, ymax=ribbon_ymax), fill='salmon') +
         geom_point(size=.2) +
         facet_grid( Group ~ protein_ID, scales='free_x', space='free_x') +
         coord_cartesian(ylim = c(input$ymin, input$ymax))

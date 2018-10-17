@@ -14,9 +14,11 @@
 identify_peaks <- function(x, method='PoT', penalty=NULL, threshold=NULL){
   if(method == 'PoT' & is.vector(x) ){
     if( is.null(threshold) ){
-      clusters <- kmeans(x, 2)
-      index <- which.min( clusters$centers )
-      threshold <- (max(x[clusters$cluster == index]) + min(x[clusters$cluster != index])) / 2
+      foo <-  data.frame(x=sort(x)) %>%
+        mutate(q=rank(x) / n(), logq = log(q)   )
+      model <- lm( x ~ q, data=foo); seg <- segmented(model)
+      threshold <- foo %>% filter(q >= seg$psi[,'Est.']) %>%
+        slice(1) %>% pull(x)
     }
     out <- ifelse( x < threshold, 0, 1 )
   }else if( method == 'PeakSeg' & is.vector(x) ){
@@ -34,36 +36,37 @@ identify_peaks <- function(x, method='PoT', penalty=NULL, threshold=NULL){
     grp <- ifelse( means > threshold, 1, 0)
     out <- rep( grp, times=n)
   }
-  temp <- data.frame(count= as.integer(x)) %>%
-    mutate(chromStart = as.integer(1:n() -1),
-           chromEnd   = as.integer(chromStart +1 ))
-  fit <- PeakSegOptimal::PeakSegPDPAchrom(temp, as.integer(20))
 
-  max.feasible.peaks <- data.table(fit$loss)[feasible==TRUE, max(peaks)]
-  show.segments <- data.table(fit$segments)[peaks <= max.feasible.peaks+2]
-  show.changes <- show.segments[, data.table(
-    position=chromStart[-1]+0.5,
-    diff=diff(mean)
-  ), by=list(peaks)]
-  show.changes[, constraint := ifelse(diff==0, "equality", "inequality")]
-
-  temp %>%
-    mutate( x= 1:n()) %>%
-    ggplot(aes(x=x, y=count))+
-    geom_point()+
-    geom_segment(aes(
-      chromStart+0.5, mean,
-      xend=chromEnd+0.5, yend=mean),
-      color="green",
-      data=show.segments)+
-    scale_linetype_manual(values=c(equality="solid", inequality="dotted"))+
-    geom_vline(aes(
-      xintercept=position, linetype=constraint),
-      color="green",
-      data=show.changes)
-  #pdf("figure-pepseq-example-mean.pdf", 12, 8)
-  print(gg)
-  #dev.off()
+  # temp <- data.frame(count= as.integer(x)) %>%
+  #   mutate(chromStart = as.integer(1:n() -1),
+  #          chromEnd   = as.integer(chromStart +1 ))
+  # fit <- PeakSegOptimal::PeakSegPDPAchrom(temp, as.integer(20))
+  #
+  # max.feasible.peaks <- data.table(fit$loss)[feasible==TRUE, max(peaks)]
+  # show.segments <- data.table(fit$segments)[peaks <= max.feasible.peaks+2]
+  # show.changes <- show.segments[, data.table(
+  #   position=chromStart[-1]+0.5,
+  #   diff=diff(mean)
+  # ), by=list(peaks)]
+  # show.changes[, constraint := ifelse(diff==0, "equality", "inequality")]
+  #
+  # temp %>%
+  #   mutate( x= 1:n()) %>%
+  #   ggplot(aes(x=x, y=count))+
+  #   geom_point()+
+  #   geom_segment(aes(
+  #     chromStart+0.5, mean,
+  #     xend=chromEnd+0.5, yend=mean),
+  #     color="green",
+  #     data=show.segments)+
+  #   scale_linetype_manual(values=c(equality="solid", inequality="dotted"))+
+  #   geom_vline(aes(
+  #     xintercept=position, linetype=constraint),
+  #     color="green",
+  #     data=show.changes)
+  # #pdf("figure-pepseq-example-mean.pdf", 12, 8)
+  # print(gg)
+  # #dev.off()
 
 
   # label peaks sequentially
@@ -72,6 +75,7 @@ identify_peaks <- function(x, method='PoT', penalty=NULL, threshold=NULL){
   out$values[index] <- 1:length(index)
   out <- inverse.rle(out)
 
+  # Quick graph to see if our peak selection sucks or makes sense.
   foo <- data.frame( y=x, x = 1:length(x), Peak=factor(out))
   ggplot(foo, aes(x=x, y=y, color=Peak)) + geom_point()
 

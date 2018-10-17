@@ -4,7 +4,7 @@
 \alias{identify_peaks}
 \title{Identify Peaks}
 \usage{
-identify_peaks(x, method = "PoT")
+identify_peaks(x, method = "PoT", penalty = NULL, threshold = NULL)
 }
 \arguments{
 \item{x}{A vector or data frame of observations. If a data frame, the rows should correspond

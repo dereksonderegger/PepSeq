@@ -4,7 +4,7 @@
 #' facing.
 #' @param file The input .csv file. It can be a full path to a file or a
 #'             relative path from the current working directory.
-#' @param standardize_method The method by which the cleaved and uncleaved read
+#' @param standardization_method The method by which the cleaved and uncleaved read
 #'                        counts are combined. Valid choices are 'additive' or
 #'                        'multiplicative'. The default is additive.
 #' @param read_indicator An argument that identifies what columns are responses
@@ -14,11 +14,9 @@
 #' @param protein_column A character string indicating which column denotes the protein.
 #' @param position_column A character string indicating which column corresponds to the position within a protein.
 #' @export
-import_pulldown <- function( file,
-        standardize_method = 'additive',
-        read_indicator = 'X',
-        protein_column = 'protein_ID',
-        position_column = 'position' ){
+import_pulldown <- function( file, standardization_method = 'additive',
+                             read_indicator = 'X', protein_column = 'protein_ID',
+                             position_column = 'position' ){
 
   df <- read.csv(file) %>%
     mutate_( protein_ID = protein_column,
@@ -47,7 +45,7 @@ import_pulldown <- function( file,
     mutate(Cleave = str_to_lower(Cleave)) %>%                                     # get rid of non-consistent capitalizations
     spread(key=Cleave, value=Value) %>%
     mutate( signal = PepSeq::standardize(.$cleaved, .$uncleaved,                  ##
-                                         type = standardize_method)) %>%          ## standardize to combine cleaved/uncleaved values
+                                         type = standardization_method)) %>%      ## standardize to combine cleaved/uncleaved values
     select(-cleaved, -uncleaved) %>%
     spread(key=Group, value=signal)
 

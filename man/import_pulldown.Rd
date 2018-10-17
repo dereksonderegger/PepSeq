@@ -4,7 +4,7 @@
 \alias{import_pulldown}
 \title{Reads an input .csv file and organizes it for visualization}
 \usage{
-import_pulldown(file, standardize_method = "additive",
+import_pulldown(file, standardization_method = "additive",
   read_indicator = "X", protein_column = "protein_ID",
   position_column = "position")
 }
@@ -12,7 +12,7 @@ import_pulldown(file, standardize_method = "additive",
 \item{file}{The input .csv file. It can be a full path to a file or a
 relative path from the current working directory.}
 
-\item{standardize_method}{The method by which the cleaved and uncleaved read
+\item{standardization_method}{The method by which the cleaved and uncleaved read
 counts are combined. Valid choices are 'additive' or
 'multiplicative'. The default is additive.}
 

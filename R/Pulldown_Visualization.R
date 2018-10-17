@@ -34,7 +34,7 @@
 #'                       or a character string that is at the beginning of all of the
 #'                       column names of the response data.
 #'
-#' @param standardize.method The method by which the cleaved and uncleaved read
+#' @param standardization_method The method by which the cleaved and uncleaved read
 #'                        counts are combined. Valid choices are 'additive' or
 #'                        'multiplicative'. The default is additive.
 #'
@@ -47,11 +47,18 @@ plot_pulldown <- function( file, output_file='pulldown.pdf',
                            height=NULL, width=NULL,
                            ymin=NULL, ymax=NULL,
                            read_indicator = 'X',
-                           standardize.method='additive',
+                           standardization_method='additive',
                            protein_column='protein_ID',
                            position_column='position'){
+  # import the data
+  df <- import_pulldown(file, standardization_method, read_indicator, protein_column, position_column)
 
-  df <- import_pulldown(file, standardize_method, read_indicator, protein_column, position_column)
+  # figure out peaks
+  # df <- df %>%
+  #   group_by(Group) %>%
+  #   mutate( Peak = as.integer(identify_peaks(Value, method='PoT')) ) %>%
+  #   mutate( ribbon_ymin = ifelse( Peak == 0, Value, -Inf),
+  #           ribbon_ymax = ifelse( Peak == 0, Value,  Inf) )
 
   # combos <- expand.grid(Group=levels(df$Group),                                   # figure out how many sequences
   #                       Trt=levels(df$Treatment),                                 # and treatment combinations we have
@@ -67,6 +74,7 @@ plot_pulldown <- function( file, output_file='pulldown.pdf',
 
   P <- df %>%
     ggplot(., aes(x=position, y=signal)) +
+    # geom_ribbon( alpha=0.4, aes(ymin=ribbon_ymin, ymax=ribbon_ymax), fill='salmon') +
     geom_point(size=.2) +
     facet_grid( Group ~ protein_ID, scales='free_x', space='free_x') +
     coord_cartesian(ylim = c(ymin, ymax))

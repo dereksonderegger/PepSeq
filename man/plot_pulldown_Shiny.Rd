@@ -4,15 +4,16 @@
 \alias{plot_pulldown_Shiny}
 \title{Create a Shiny application showing a scatterplot representing a pull-down}
 \usage{
-plot_pulldown_Shiny(file, standardize_method = "additive",
+plot_pulldown_Shiny(file, standardization_method = "additive",
   read_indicator = "X", protein_column = "protein_ID",
-  position_column = "position")
+  position_column = "position", peaks = TRUE, peak_method = "PoT",
+  peak_param = NA)
 }
 \arguments{
 \item{file}{The input .csv file. It can be a full path to a file or a
 relative path from the current working directory.}
 
-\item{standardize_method}{The method by which the cleaved and uncleaved read
+\item{standardization_method}{The method by which the cleaved and uncleaved read
 counts are combined. Valid choices are 'additive' or
 'multiplicative'. The default is additive.}
 
@@ -37,4 +38,9 @@ The input .csv file should have a columns denoting the protein name and location
 a bunch of response columns.  If the response column has a "XXX_cleaved" and
 "XXX_uncleaved" pair, then we standardize the cleaved/uncleaved pair into a single
 response.  If the column has no pair, then we don't do any standardization with it.
+}
+\examples{
+file <- system.file("extdata", "example_counts.csv", package = "PepSeq")
+plot_pulldown_Shiny(file, read_indicator='Y_')
+
 }

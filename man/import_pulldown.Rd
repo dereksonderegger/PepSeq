@@ -18,7 +18,7 @@ counts are combined. Valid choices are 'additive' or
 
 \item{read_indicator}{An argument that identifies what columns are responses
 to be plotted. This could be either a vector of integers
-or a character string that is at the beginning of all of the
+or a character string (or vector of strings) that is at the beginning of all of the
 column names of the response data.}
 
 \item{protein_column}{A character string indicating which column denotes the protein.}

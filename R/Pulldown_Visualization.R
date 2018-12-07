@@ -42,6 +42,12 @@
 #'
 #' @param position_column A character string indicating which column corresponds to the position within a protein.
 #'
+#' @param peaks A logical flag denoting if the peaks should be highlighted
+#' @param peak_method Which method should be used for peak detection
+#' @param peak_param A parameter which controls the peak finding method. For PoT, it is the threshold.
+#' @param scales Contols if the y-scale should be 'fixed' across the rows or if the y-scales should be 'free'
+#'              to vary across the different rows.
+#'
 #' @export
 plot_pulldown <- function( file, output_file='pulldown.pdf',
                            height=NULL, width=NULL,
@@ -49,16 +55,22 @@ plot_pulldown <- function( file, output_file='pulldown.pdf',
                            read_indicator = 'X',
                            standardization_method='additive',
                            protein_column='protein_ID',
-                           position_column='position'){
+                           position_column='position',
+                           peaks=TRUE, peak_method='PoT', peak_param=NA,
+                           scales = 'fixed'){
   # import the data
   df <- import_pulldown(file, standardization_method, read_indicator, protein_column, position_column)
 
+
   # figure out peaks
-  # df <- df %>%
-  #   group_by(Group) %>%
-  #   mutate( Peak = as.integer(identify_peaks(Value, method='PoT')) ) %>%
-  #   mutate( ribbon_ymin = ifelse( Peak == 0, Value, -Inf),
-  #           ribbon_ymax = ifelse( Peak == 0, Value,  Inf) )
+  if( peaks == TRUE){
+    Peak_Params <- df %>% group_by(Group) %>% count() %>% ungroup() %>% mutate(peak_param=peak_param) %>% select(-n)
+    Peaks <- df %>%
+    #mutate( signal = signal %>% pmax(signal,0) %>% as.integer() ) %>%
+      left_join(Peak_Params, by='Group') %>%
+      group_by(Group, protein_ID) %>%
+      do( {identify_peaks( .$position, .$signal, method='PoT', .$peak_param[1] ) })
+  }
 
   # combos <- expand.grid(Group=levels(df$Group),                                   # figure out how many sequences
   #                       Trt=levels(df$Treatment),                                 # and treatment combinations we have
@@ -72,15 +84,39 @@ plot_pulldown <- function( file, output_file='pulldown.pdf',
   if( is.null(ymin) ){ ymin=min(df$signal,na.rm=TRUE) }
   if( is.null(ymax) ){ ymax=max(df$signal, na.rm=TRUE) }
 
-  P <- df %>%
-    ggplot(., aes(x=position, y=signal)) +
-    # geom_ribbon( alpha=0.4, aes(ymin=ribbon_ymin, ymax=ribbon_ymax), fill='salmon') +
-    geom_point(size=.2) +
-    facet_grid( Group ~ protein_ID, scales='free_x', space='free_x') +
-    coord_cartesian(ylim = c(ymin, ymax))
+  P <-
+    ggplot(df) +
+    geom_point(data=df, aes(x=position, y=signal), size=.2) +
+    #facet_grid( Group ~ protein_ID, scales='free_x', space='free_x') +
+    facet_grid( Group ~ protein_ID, scale='free', space='free_x')
+  if( peaks == TRUE ){
+    P <- P + geom_rect( data=Peaks, alpha=0.4, aes(xmin=Start, xmax=End, ymin=-Inf, ymax=Inf), fill='salmon')
+  }
+  if( scales == 'fixed' ){
+    P <- P + coord_cartesian(ylim = c(ymin, ymax))
+  }
 
   ggsave(plot=P, filename=output_file, width = width, height=height, limitsize=FALSE)
 
   invisible(df)  # return the data (invisibly!)
 }
 
+
+
+# file = system.file('extdata', 'PepSeq_vs_NN.csv', package='PepSeq')
+# output_file='pulldown.pdf'
+# height=NULL; width=NULL
+# ymin=NULL; ymax=NULL
+# standardization_method='additive'
+# protein_column='Protein_ID'
+# position_column='Start_Loc'
+# read_indicator=3:6
+# peaks=TRUE; peak_method='PoT'; peak_param=c(.5, 95, 10)
+
+
+# plot_pulldown( file = system.file('extdata', 'PepSeq_vs_NN.csv', package='PepSeq'),
+#                output_file='pulldown.pdf',
+#                read_indicator = 3:6,
+#                protein_column = 'Protein_ID', position_column='Start_Loc',
+#                peak_param=c(.5, 95, 10),
+#                scales='free')

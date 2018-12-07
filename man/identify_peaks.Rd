@@ -4,19 +4,20 @@
 \alias{identify_peaks}
 \title{Identify Peaks}
 \usage{
-identify_peaks(x, method = "PoT", penalty = NULL, threshold = NULL)
+identify_peaks(x, y, method = "PeakSeg", param = NA)
 }
 \arguments{
-\item{x}{A vector or data frame of observations. If a data frame, the rows should correspond
-to the sequence of observations, and each column is an independent experiement.}
+\item{x}{A vector x-values.}
+
+\item{y}{A vector of y-values.}
 
 \item{method}{A character string denoting which method to use. Valid options are: PeakSeg and PoT}
+
+\item{param}{A parameter controling how many peaks are detected. For PoT, it is the treshold.}
+}
+\value{
+A data frame with columns `Peak`, `Start`, and `End`.
 }
 \description{
-Given an input data frame (or vector) of sequential observations, calculate the peaks
-}
-\examples{
-lambdas <- rep( c(10,40,10,40,10), times=c(20,10,30,8,30) )
-data <- rpois( length(lambdas), lambda = lambdas )
-identify_peaks( x=data )
+Given (x,y) pairs of datapoints, calculate peaks.
 }

@@ -22,7 +22,7 @@
 #'                       column names of the response data.
 #' @param protein_column A character string indicating which column denotes the protein.
 #' @param position_column A character string indicating which column corresponds to the position within a protein.
-#' @xamples
+#' @examples
 #' file <- system.file("extdata", "example_counts.csv", package = "PepSeq")
 #' plot_pulldown_Shiny(file, read_indicator='Y_')
 #'
@@ -31,18 +31,37 @@ plot_pulldown_Shiny <- function(file,
                                 standardization_method='additive',
                                 read_indicator='X',
                                 protein_column = 'protein_ID',
-                                position_column = 'position'){
+                                position_column = 'position',
+                                peaks=TRUE, peak_method='PoT', peak_param=NA){
 
-  #input_file = "/Library/Frameworks/R.framework/Versions/3.5/Resources/library/PepSeq/extdata/example_counts.csv"
+  # file = "/Library/Frameworks/R.framework/Versions/3.5/Resources/library/PepSeq/extdata/example_counts.csv"
+  # file = '~/Dropbox/NAU/Research/PepSeq/Pulldown Visualization/counts_annotated.csv'
+  # peak_method = 'PoT'
+  # peak_param  = c(1, NA, NA)
+
   # Import the data
-  df <- PepSeq::import_pulldown(file, standardization_method, read_indicator, protein_column, position_column)
+  df <- PepSeq::import_pulldown(file=file,
+                                standardization_method = standardization_method,
+                                read_indicator = read_indicator,
+                                protein_column=protein_column,
+                                position_column=position_column) %>%
+    arrange(Group, index)
 
   # figure out peaks
-  # df <- df %>%
-  #   group_by(Group) %>%
-  #   mutate( Peak = as.integer(identify_peaks(Value, method='PoT')) ) %>%
-  #   mutate( ribbon_ymin = ifelse( Peak == 0, Value, -Inf),
-  #           ribbon_ymax = ifelse( Peak == 0, Value,  Inf) )
+  if( peaks == TRUE ){
+    Peak_Params <- df %>% group_by(Group) %>% count() %>% ungroup() %>% mutate(peak_param=peak_param) %>% select(-n)
+    Peaks <- df %>%
+      #mutate( signal = signal %>% pmax(signal,0) %>% as.integer() ) %>%
+      left_join(Peak_Params, by='Group') %>%
+      group_by(Group, protein_ID) %>%
+      do( {identify_peaks( .$position, .$signal, method='PoT', .$peak_param[1] ) }) %>%
+      left_join( df, by=c('protein_ID', 'Group', 'Start'='position')) %>%
+      rename( Start.index = index ) %>% select( Group, protein_ID, Peak, Start, End, Start.index) %>%
+      left_join( df, by=c('protein_ID', 'Group', 'End'='position')) %>%
+      rename( End.index = index ) %>% select( Group, protein_ID, Peak, Start, End, Start.index, End.index)
+  }else{
+    Peaks <- data.frame(Group=NULL, protein_ID=NULL, Peak=NULL, Start=NULL, End=NULL, Start.index=NULL, End.index=NULL)
+  }
 
 
   Proteins <- df %>%
@@ -54,10 +73,6 @@ plot_pulldown_Shiny <- function(file,
   ymin=floor(   min(df$signal, na.rm=TRUE))
   ymax=ceiling( max(df$signal, na.rm=TRUE))
   n <- max(df$index)
-
-  # Ctrl <- list(window_start = 1,
-  #              window_width = 2000,
-  #              protein = Proteins %>% pull(protein_ID) %>%.[1])
 
 
   # create the UI
@@ -89,12 +104,11 @@ plot_pulldown_Shiny <- function(file,
 
   # define the server function
   server <- function(input, output, session) {
-
     # Update the controls as other controls get changed by the user
-    observeEvent( input$window_start, {
-      # isolate(updateSelectInput(session, 'protein',
-      #                   selected = df[input$window_start, 'protein_ID']))
-    })
+    # observeEvent( input$window_start, {
+    #   # isolate(updateSelectInput(session, 'protein',
+    #   #                   selected = df[input$window_start, 'protein_ID']))
+    # })
     observeEvent( input$window_next, {
       updateSliderInput(session, 'window_start', value = input$window_start + input$window_width)
     })
@@ -105,22 +119,29 @@ plot_pulldown_Shiny <- function(file,
       isolate(updateSliderInput(session, 'window_start',
                         value=Proteins %>% filter(protein_ID == input$protein) %>% pull(index) ))
     })
-    observeEvent( input$window_width, {
-      updateSliderInput( session, 'window_start',
-                         step = input$window_width)
-    })
+    # observeEvent( input$window_width, {
+    #   updateSliderInput( session, 'window_start', step = input$window_width)
+    # })
+
+
 
     output$Plot <- renderPlot({
       xmin <- round(input$window_start )
       xmax <- round(input$window_start + input$window_width)
 
-      df %>%
-        filter( index > xmin, index < xmax ) %>%
-        ggplot(., aes(x=position, y=signal)) +
-        # geom_ribbon( alpha=0.4, aes(ymin=ribbon_ymin, ymax=ribbon_ymax), fill='salmon') +
-        geom_point(size=.2) +
+      df.small <- df %>% filter( index > xmin, index < xmax )
+
+      P <- ggplot(df.small) +
+        geom_point(size=.2, aes(x=position, y=signal)) +
         facet_grid( Group ~ protein_ID, scales='free_x', space='free_x') +
         coord_cartesian(ylim = c(input$ymin, input$ymax))
+
+      if( peaks == TRUE ){
+        Peaks.small <- Peaks %>% filter( End.index > xmin, Start.index < xmax )
+        P <- P +  geom_rect( data=Peaks.small, alpha=0.4, aes(xmin=Start, xmax=End, ymin=-Inf, ymax=Inf), fill='salmon')
+      }
+
+      P
     })
 
   }
@@ -128,3 +149,5 @@ plot_pulldown_Shiny <- function(file,
   shinyApp(ui = ui, server = server)
 
 }
+
+

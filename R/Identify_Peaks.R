@@ -1,83 +1,56 @@
 #' Identify Peaks
 #'
-#' Given an input data frame (or vector) of sequential observations, calculate the peaks
+#' Given (x,y) pairs of datapoints, calculate peaks.
 #'
-#' @param x A vector or data frame of observations. If a data frame, the rows should correspond
-#'          to the sequence of observations, and each column is an independent experiement.
-#'
+#' @param x A vector x-values.
+#' @param y A vector of y-values.
 #' @param method A character string denoting which method to use. Valid options are: PeakSeg and PoT
-#' @examples
-#' lambdas <- rep( c(10,40,10,40,10), times=c(20,10,30,8,30) )
-#' data <- rpois( length(lambdas), lambda = lambdas )
-#' identify_peaks( x=data )
+#' @param param A parameter controling how many peaks are detected. For PoT, it is the treshold.
+#' @return A data frame with columns `Peak`, `Start`, and `End`.
 #' @export
-identify_peaks <- function(x, method='PoT', penalty=NULL, threshold=NULL){
-  if(method == 'PoT' & is.vector(x) ){
-    if( is.null(threshold) ){
-      foo <-  data.frame(x=sort(x)) %>%
-        mutate(q=rank(x) / n(), logq = log(q)   )
-      model <- lm( x ~ q, data=foo); seg <- segmented(model)
-      threshold <- foo %>% filter(q >= seg$psi[,'Est.']) %>%
-        slice(1) %>% pull(x)
+identify_peaks <- function(x, y, method='PeakSeg', param=NA){
+  # if(length(method) > 1){
+  #   method = unique(method)
+  # }
+  # if( length(param) > 1){
+  #   param = unique(param)
+  # }
+
+  if(method == 'PoT' ){
+    foo <-  data.frame(x=x, y=y) %>% arrange(x) %>% mutate(z=row_number() )
+    if( is.null(param) | is.na(param) ){
+      message('Using default threshold')
+      param <- foo %>%
+        mutate( q=rank(y) / n(), logq = log(q)   ) %>%
+        filter( q >= .85 ) %>%
+        summarize(y = min(y)) %>% pull(y)
     }
-    out <- ifelse( x < threshold, 0, 1 )
+    out <-
+      foo %>%
+      filter( y >= param ) %>%
+      mutate( delta = diff(c(1, z))) %>%
+      mutate( Peak = cumsum(delta) - 1:n() + 1 ) %>%
+      group_by(Peak) %>% summarize( Start=min(x), End=max(x) ) %>%
+      mutate( Peak = row_number() )
+
   }else if( method == 'PeakSeg' & is.vector(x) ){
-    model <- PeakSegOptimal::PeakSegFPOP(x, penalty = penalty)
-    ends <- model$ends.vec
-    ends <- ends[ ends > 0 ] %>% rev() %>% c( length(x) )
-    means <- model$mean.vec
-    means <- means[ means != Inf ] %>% rev()
-    n <- c(ends[1], diff(ends) )
+    if( length(unique(y)) <= 2 ){
+      out <- data.frame(Peak=NULL, Start=NULL, End=NULL) # not enough unique values
+    }else{
+      if( is.na(param) ){ param <- 10 }
+      foo <- data.frame(count= as.integer(pmax(y,0))) %>%
+        mutate(chromStart = as.integer(x), chromEnd   = as.integer(x+1 ))
 
-    clusters <- kmeans(means, 2)
-    index <- which.min( clusters$centers )
-    threshold <- (max(x[clusters$cluster == index]) + min(x[clusters$cluster != index])) / 2
-
-    grp <- ifelse( means > threshold, 1, 0)
-    out <- rep( grp, times=n)
+      # fit <- PeakSegOptimal::PeakSegPDPAchrom(temp, as.integer(20))   # find sequence of best 1 peak, 2 peaks, 3 peaks, etc
+      fit <- PeakSegOptimal::PeakSegFPOPchrom(foo, as.integer(param))    # Find the best number of peaks
+      out <-
+        fit$segments %>%
+        filter(status == 'peak') %>%
+        rename(Start=chromStart, End=chromEnd) %>%
+        mutate(Peak = 1:n()) %>%
+        select(Peak, Start, End)
+    }
   }
-
-  # temp <- data.frame(count= as.integer(x)) %>%
-  #   mutate(chromStart = as.integer(1:n() -1),
-  #          chromEnd   = as.integer(chromStart +1 ))
-  # fit <- PeakSegOptimal::PeakSegPDPAchrom(temp, as.integer(20))
-  #
-  # max.feasible.peaks <- data.table(fit$loss)[feasible==TRUE, max(peaks)]
-  # show.segments <- data.table(fit$segments)[peaks <= max.feasible.peaks+2]
-  # show.changes <- show.segments[, data.table(
-  #   position=chromStart[-1]+0.5,
-  #   diff=diff(mean)
-  # ), by=list(peaks)]
-  # show.changes[, constraint := ifelse(diff==0, "equality", "inequality")]
-  #
-  # temp %>%
-  #   mutate( x= 1:n()) %>%
-  #   ggplot(aes(x=x, y=count))+
-  #   geom_point()+
-  #   geom_segment(aes(
-  #     chromStart+0.5, mean,
-  #     xend=chromEnd+0.5, yend=mean),
-  #     color="green",
-  #     data=show.segments)+
-  #   scale_linetype_manual(values=c(equality="solid", inequality="dotted"))+
-  #   geom_vline(aes(
-  #     xintercept=position, linetype=constraint),
-  #     color="green",
-  #     data=show.changes)
-  # #pdf("figure-pepseq-example-mean.pdf", 12, 8)
-  # print(gg)
-  # #dev.off()
-
-
-  # label peaks sequentially
-  out <- rle(out)
-  index <- which( out$values > 0 )
-  out$values[index] <- 1:length(index)
-  out <- inverse.rle(out)
-
-  # Quick graph to see if our peak selection sucks or makes sense.
-  foo <- data.frame( y=x, x = 1:length(x), Peak=factor(out))
-  ggplot(foo, aes(x=x, y=y, color=Peak)) + geom_point()
 
   return(out)
 }

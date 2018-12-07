@@ -6,8 +6,9 @@
 \usage{
 plot_pulldown(file, output_file = "pulldown.pdf", height = NULL,
   width = NULL, ymin = NULL, ymax = NULL, read_indicator = "X",
-  standardize.method = "additive", protein_column = "protein_ID",
-  position_column = "position")
+  standardization_method = "additive", protein_column = "protein_ID",
+  position_column = "position", peaks = TRUE, peak_method = "PoT",
+  peak_param = NA, scales = "fixed")
 }
 \arguments{
 \item{file}{The input .csv file. It can be a full path to a file or a
@@ -33,13 +34,22 @@ to be plotted. This could be either a vector of integers
 or a character string that is at the beginning of all of the
 column names of the response data.}
 
-\item{standardize.method}{The method by which the cleaved and uncleaved read
+\item{standardization_method}{The method by which the cleaved and uncleaved read
 counts are combined. Valid choices are 'additive' or
 'multiplicative'. The default is additive.}
 
 \item{protein_column}{A character string indicating which column denotes the protein.}
 
 \item{position_column}{A character string indicating which column corresponds to the position within a protein.}
+
+\item{peaks}{A logical flag denoting if the peaks should be highlighted}
+
+\item{peak_method}{Which method should be used for peak detection}
+
+\item{peak_param}{A parameter which controls the peak finding method. For PoT, it is the threshold.}
+
+\item{scales}{Contols if the y-scale should be 'fixed' across the rows or if the y-scales should be 'free'
+to vary across the different rows.}
 }
 \description{
 The pulldown script created by John Altin creates a .csv file

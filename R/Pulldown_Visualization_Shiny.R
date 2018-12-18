@@ -11,41 +11,34 @@
 #' "XXX_uncleaved" pair, then we standardize the cleaved/uncleaved pair into a single
 #' response.  If the column has no pair, then we don't do any standardization with it.
 #'
-#' @param file The input .csv file. It can be a full path to a file or a
-#'                   relative path from the current working directory.
-#' @param standardization_method The method by which the cleaved and uncleaved read
-#'                        counts are combined. Valid choices are 'additive' or
-#'                        'multiplicative'. The default is additive.
-#' @param read_indicator An argument that identifies what columns are responses
-#'                       to be plotted. This could be either a vector of integers
-#'                       or a character string that is at the beginning of all of the
-#'                       column names of the response data.
-#' @param protein_column A character string indicating which column denotes the protein.
-#' @param position_column A character string indicating which column corresponds to the position within a protein.
+#' @param input The input data frame  read in using the
+#'              `import_pulldown()` function.
+#'
+#' @param height The height of the graph window (in pixels).
+#'
+#' @param peaks A logical flag denoting if the peaks should be highlighted
+#'
+#' @param peak_method Which method should be used for peak detection
+#'
+#' @param peak_param A parameter which controls the peak finding method. For PoT, it is the threshold.
+#'
+#' @param scales Contols if the y-scale should be 'fixed' across the rows or if the y-scales should be 'free'
+#'              to vary across the different rows.
+#'
 #' @examples
 #' file <- system.file("extdata", "example_counts.csv", package = "PepSeq")
 #' plot_pulldown_Shiny(file, read_indicator='Y_')
 #'
 #' @export
-plot_pulldown_Shiny <- function(file,
-                                standardization_method='additive',
-                                read_indicator='X',
-                                protein_column = 'protein_ID',
-                                position_column = 'position',
-                                peaks=TRUE, peak_method='PoT', peak_param=NA){
-
-  # file = "/Library/Frameworks/R.framework/Versions/3.5/Resources/library/PepSeq/extdata/example_counts.csv"
-  # file = '~/Dropbox/NAU/Research/PepSeq/Pulldown Visualization/counts_annotated.csv'
-  # peak_method = 'PoT'
-  # peak_param  = c(1, NA, NA)
+plot_pulldown_Shiny <- function(input, height=400,
+                                peaks=FALSE, peak_method='PoT', peak_param=NA){
 
   # Import the data
-  df <- PepSeq::import_pulldown(file=file,
-                                standardization_method = standardization_method,
-                                read_indicator = read_indicator,
-                                protein_column=protein_column,
-                                position_column=position_column) %>%
-    arrange(Group, index)
+  if( is.character(input) ){
+    df <- import_pulldown(file, standardization_method, read_indicator, protein_column, position_column)
+  }else{
+    df <- input
+  }
 
   # figure out peaks
   if( peaks == TRUE ){
@@ -76,7 +69,7 @@ plot_pulldown_Shiny <- function(file,
 
 
   # create the UI
-  ui <- fluidPage(
+  ui <- fillPage(
     titlePanel("Peptide Sequence Exploration"),
     sidebarLayout(
       # Sidebar panel for inputs ----
@@ -93,10 +86,13 @@ plot_pulldown_Shiny <- function(file,
                    numericInput(inputId = 'ymin', label = 'Minimum response:',
                                 value = ymin, min = ymin, max=ymax),
                    numericInput(inputId = 'ymax', label = 'Maximum response:',
-                                value = ymax, min = ymin, max=ymax)
+                                value = ymax, min = ymin, max=ymax),
+                   selectInput(inputId = 'groups', label='Rows to View',
+                               choices = unique(df$Group), selected=unique(df$Group),
+                               multiple = TRUE)
       ),
       mainPanel(width=10,
-                plotOutput(outputId = "Plot")
+                plotOutput(outputId = "Plot", height = "auto")
       )
     )
   )
@@ -125,24 +121,33 @@ plot_pulldown_Shiny <- function(file,
 
 
 
-    output$Plot <- renderPlot({
-      xmin <- round(input$window_start )
-      xmax <- round(input$window_start + input$window_width)
+    output$Plot <- renderPlot(
+      {
+        xmin <- round(input$window_start )
+        xmax <- round(input$window_start + input$window_width)
 
-      df.small <- df %>% filter( index > xmin, index < xmax )
+        df.small <- df %>%
+          filter( index > xmin, index < xmax ) %>%
+          filter( Group %in% input$groups )
 
-      P <- ggplot(df.small) +
-        geom_point(size=.2, aes(x=position, y=signal)) +
-        facet_grid( Group ~ protein_ID, scales='free_x', space='free_x') +
-        coord_cartesian(ylim = c(input$ymin, input$ymax))
+        P <- ggplot(df.small) +
+          geom_point(size=.2, aes(x=position, y=signal)) +
+          facet_grid( Group ~ protein_ID, scales='free_x', space='free_x') +
+          coord_cartesian(ylim = c(input$ymin, input$ymax))
 
-      if( peaks == TRUE ){
-        Peaks.small <- Peaks %>% filter( End.index > xmin, Start.index < xmax )
-        P <- P +  geom_rect( data=Peaks.small, alpha=0.4, aes(xmin=Start, xmax=End, ymin=-Inf, ymax=Inf), fill='salmon')
-      }
-
-      P
-    })
+        if( peaks == TRUE & nrow(Peaks) >= 1 ){
+          Peaks.small <- Peaks %>%
+            filter( End.index > xmin, Start.index < xmax ) %>%
+            filter( Group %in% input$groups )
+          P <- P +  geom_rect( data=Peaks.small, alpha=0.4, aes(xmin=Start, xmax=End, ymin=-Inf, ymax=Inf), fill='salmon')
+        }
+        P
+      },
+      # height = function() { session$clientData$output_Plot_width }
+      # height = input$plot_height
+      # height = 400
+      height = height
+    )
 
   }
 

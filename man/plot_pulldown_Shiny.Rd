@@ -4,27 +4,23 @@
 \alias{plot_pulldown_Shiny}
 \title{Create a Shiny application showing a scatterplot representing a pull-down}
 \usage{
-plot_pulldown_Shiny(file, standardization_method = "additive",
-  read_indicator = "X", protein_column = "protein_ID",
-  position_column = "position", peaks = TRUE, peak_method = "PoT",
-  peak_param = NA)
+plot_pulldown_Shiny(input, height = 400, peaks = FALSE,
+  peak_method = "PoT", peak_param = NA)
 }
 \arguments{
-\item{file}{The input .csv file. It can be a full path to a file or a
-relative path from the current working directory.}
+\item{input}{The input data frame  read in using the
+`import_pulldown()` function.}
 
-\item{standardization_method}{The method by which the cleaved and uncleaved read
-counts are combined. Valid choices are 'additive' or
-'multiplicative'. The default is additive.}
+\item{height}{The height of the graph window (in pixels).}
 
-\item{read_indicator}{An argument that identifies what columns are responses
-to be plotted. This could be either a vector of integers
-or a character string that is at the beginning of all of the
-column names of the response data.}
+\item{peaks}{A logical flag denoting if the peaks should be highlighted}
 
-\item{protein_column}{A character string indicating which column denotes the protein.}
+\item{peak_method}{Which method should be used for peak detection}
 
-\item{position_column}{A character string indicating which column corresponds to the position within a protein.}
+\item{peak_param}{A parameter which controls the peak finding method. For PoT, it is the threshold.}
+
+\item{scales}{Contols if the y-scale should be 'fixed' across the rows or if the y-scales should be 'free'
+to vary across the different rows.}
 }
 \description{
 The pulldown script created by John Altin creates a .csv file

@@ -39,7 +39,6 @@ output_file <- '~/GitHub/PepSeq/inst/extdata/PepSeq_vs_NN.pdf'
 ```
 
 
-
 `PepSeq` assumes that a pulldown .csv file is arrange in a format with one protein/location combination
 per line and then several sets of cleaved/uncleaved pairs and possibly columns of data that aren't cleaved/uncleaved but rather just some other signal (e.g. output from another model as to the likelihood of binding).
 
@@ -49,56 +48,109 @@ read.csv(input_file) %>% colnames()
 
 Notice that in the example pulldown file, there is just one experiment (wTEV) and two other added columns model of neural net model predictions and if the number of literature citations.  The orderings of all the columns doesn't matter, but you need to be able to identify the protein and position columns and each of the cleaved/uncleaved pairs need to have the same prefix followed by an '_Cleaved' or '_Uncleaved'.  If there is no 'Cleaved' or 'Uncleaved' suffix on a column then we assume the column is a measurement and will be data to be visualized.
 
-In order to allow there to be many other interesting columns that should be ignored in the visualization, `PepSeq` requires you to indicate which columns are to be plotted by either having an initial suffix indicating it is data or to indicate the responses by column location (e.g. columns 3 to 7).
+In order to allow there to be many other interesting columns that should be ignored in the visualization, `PepSeq` requires you to indicate which columns are to be plotted by either having an initial suffix indicating it is data or to indicate the responses by column location (e.g. columns 3 to 6).
+
+```{r}
+# There is a function to import from a .csv data file
+data_input <- import_pulldown(
+  input_file, 
+  standardization_method = 'additive',
+  protein_column = 'Protein_ID', 
+  position_column = 'Start_Loc',
+  read_indicator = 3:6)
+```
+
+
 
 ```{r, warning=FALSE, message=FALSE}
-plot_pulldown(
+data_input <- import_pulldown(
   file = input_file,                # input file
-  output_file = output_file,        # output file name
+  standardization_method = 'additive',
   protein_column = 'Protein_ID',    # which is the protein name
   position_column = 'Start_Loc',    # which is the starting location
-  read_indicator = 3:6,             # column range to be visualized
-  peaks = FALSE )                   # Don't calculate peaks
-
-plot_pulldown( 
-  file = input_file,                        
-  output_file = output_file,                 
-  protein_column = 'Protein_ID',             
-  position_column = 'Start_Loc',             
-  read_indicator = c(3,4,5,6),      # or specify individual columns
-  peaks = FALSE )
+  read_indicator = c(3,4,5,6))      # column range to be visualized
 ```
 
 Notice that in each of the calls, we also had to specify which column specified the protein name and which column denotes the position along the protein.
 
-After either of the above are run, a pdf has been created either in the current working directory, or where ever you specified using when creating the output file string.
+Once the data has been read in, it can then be passed to the visualization program. In the visualization program, you can control the final `height` and `width` of the resulting figure as well as the maximum and minimum values for the y-axis. By including a `peaks=TRUE` option, the peaks will be highlighted.  The default peak fitting procedure is 'Peaks over Threshold' and requires a theshold parameter, which can be set via the `peak_param` option.
 
-In all the examples previously, we've supressed the peaks highlighting.  To turn peak highlighting on, you can just remove the `peaks = FALSE`, or explicitly ask for it via `peaks = TRUE`. To change the peak finding method or change the tuning parameter you can use the `peak_method` and `peak_param` options.
 
 ```{r}
 plot_pulldown( 
-  file = input_file,                # input file
+  data_input,                       # input data
   output_file = output_file,        # output file name
-  protein_column = 'Protein_ID',    # which column is the protein name
-  position_column = 'Start_Loc',    # which column is the starting location
-  read_indicator = 3:6,             # column range to be visualized
   peaks = TRUE,                     # Show the peaks
   peak_method = 'PoT',              # Use "Peaks over Threshold"
   peak_param = c(.5, 90, 10) )      # thresholds are by row 
+
 ```
 
 
-Finally if we want to look at the interactive version, all the options are the same, but we don't need the `output_file`.
+Finally if we want to look at the interactive Shiny version, all the options are the same, but we don't need the `output_file`.
 
 ```{r, eval=FALSE}
 plot_pulldown_Shiny( 
-  file = input_file,                # input file
-  protein_column = 'Protein_ID',    # which is the protein name
-  position_column = 'Start_Loc',    # which is the starting location
-  read_indicator = 3:6,             # column range to be visualized
+  data_input,                       # input data
   peaks = TRUE,                     # Show the peaks
   peak_method = 'PoT',              # Use "Peaks over Threshold"
   peak_param = c(.5, 90, 10) )      # thresholds are by row 
-
 ```
 
+Notice in the Shiny application there are options to rescale the min and max of the y-axis, the window width (to squish or stretch the data points apart), as well as to select which rows are shown.  While it is possible to resize the window and have the x-axis expand with the window, the same is frustratingly not possible for the y-axis. To get around this, I've added a `height` option that can be set to create a larger or smaller graph. 
+
+```{r, eval=FALSE}
+plot_pulldown_Shiny( 
+  data_input,                       # input data
+  peaks = TRUE,                     # Show the peaks
+  peak_method = 'PoT',              # Use "Peaks over Threshold"
+  peak_param = c(.5, 90, 10),       # thresholds are by row 
+  height = 500 )                    # The graph height (in pixels)
+```
+
+A similar trick can be done for the scaling the height and width of the pdf output. This is particularly handy for stretching the x-axis to get a bit more readability.
+
+```{r}
+plot_pulldown( 
+  data_input,                       # input data
+  output_file = output_file,        # output file name
+  peaks = TRUE,                     # Show the peaks
+  peak_method = 'PoT',              # Use "Peaks over Threshold"
+  peak_param = c(.5, 90, 10),       # thresholds are by row 
+  height=8, width = 120 )
+```
+
+
+The reason I've allowed for a way to separate the data import from the visualization
+is that it can be useful to do a little pre-processing.  For example, perhaps we want
+to only look at a few of the experiments instead of all of them.
+
+```{r}
+input_file  <- '~/Dropbox/NAU/Research/PepSeq/Pulldown Visualization/Example_SeveralRows_3-27.csv'
+output_file <- '~/Dropbox/NAU/Research/PepSeq/Pulldown Visualization/Example_SeveralRows_3-27.pdf'
+
+# What columns are we looking at in this example?
+read.csv(input_file) %>% colnames()
+```
+
+```{r}
+# Read in this second example set of data
+data_input <- import_pulldown(
+  file = input_file,                # input file
+  protein_column = 'protein_ID',    # which is the protein name
+  position_column = 'position',     # which is the starting location
+  read_indicator = 'X')             # column range to be visualized
+
+# Now make a smaller set of data that only includes X01.01 and X04.04
+data_small <- data_input%>%
+  filter( Group %in% c('X01.01_KTX', 'X04.04_KTX') ) # Just graph these!
+```
+
+
+```{r, eval=FALSE}
+plot_pulldown_Shiny( 
+  data_small,                       # input data
+  peaks = TRUE,                     # Show the peaks
+  peak_method = 'PoT',              # Use "Peaks over Threshold"
+  peak_param = c(10, 10) )          # thresholds are by row 
+```

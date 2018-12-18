@@ -26,6 +26,5 @@ column names of the response data.}
 \item{position_column}{A character string indicating which column corresponds to the position within a protein.}
 }
 \description{
-This function is intended to be internal to the package and not user
-facing.
+This function is intended to be how users import data from a pulldown.
 }

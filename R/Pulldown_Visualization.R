@@ -11,8 +11,8 @@
 #' `protein_ID` and `position` and that no other columns other than the read
 #' counts start with a `X`.
 #'
-#' @param file The input .csv file. It can be a full path to a file or a
-#'                   relative path from the current working directory.
+#' @param input The input data frame read in using the
+#'              `import_pulldown()` function.
 #'
 #' @param output_file The file to save the resulting image. In can be a full
 #'                    path to the new file or a relative path from the current
@@ -29,56 +29,50 @@
 #'
 #' @param ymax The maximum value of the response to be shown.  If NULL, all the data is shown.
 #'
-#' @param read_indicator An argument that identifies what columns are responses
-#'                       to be plotted. This could be either a vector of integers
-#'                       or a character string that is at the beginning of all of the
-#'                       column names of the response data.
-#'
-#' @param standardization_method The method by which the cleaved and uncleaved read
-#'                        counts are combined. Valid choices are 'additive' or
-#'                        'multiplicative'. The default is additive.
-#'
-#' @param protein_column A character string indicating which column denotes the protein.
-#'
-#' @param position_column A character string indicating which column corresponds to the position within a protein.
-#'
 #' @param peaks A logical flag denoting if the peaks should be highlighted
+#'
 #' @param peak_method Which method should be used for peak detection
+#'
 #' @param peak_param A parameter which controls the peak finding method. For PoT, it is the threshold.
+#'
 #' @param scales Contols if the y-scale should be 'fixed' across the rows or if the y-scales should be 'free'
 #'              to vary across the different rows.
 #'
 #' @export
-plot_pulldown <- function( file, output_file='pulldown.pdf',
+plot_pulldown <- function( input, output_file='pulldown.pdf',
                            height=NULL, width=NULL,
                            ymin=NULL, ymax=NULL,
-                           read_indicator = 'X',
-                           standardization_method='additive',
-                           protein_column='protein_ID',
-                           position_column='position',
                            peaks=TRUE, peak_method='PoT', peak_param=NA,
                            scales = 'fixed'){
-  # import the data
-  df <- import_pulldown(file, standardization_method, read_indicator, protein_column, position_column)
+
+  # import the data, if the user didn't just pass it in
+  if( is.character(input) ){
+    df <- import_pulldown(file, standardization_method, read_indicator, protein_column, position_column)
+  }else{
+    df <- input
+  }
 
 
   # figure out peaks
-  if( peaks == TRUE){
+  if( peaks == TRUE ){
     Peak_Params <- df %>% group_by(Group) %>% count() %>% ungroup() %>% mutate(peak_param=peak_param) %>% select(-n)
     Peaks <- df %>%
-    #mutate( signal = signal %>% pmax(signal,0) %>% as.integer() ) %>%
+      #mutate( signal = signal %>% pmax(signal,0) %>% as.integer() ) %>%
       left_join(Peak_Params, by='Group') %>%
       group_by(Group, protein_ID) %>%
-      do( {identify_peaks( .$position, .$signal, method='PoT', .$peak_param[1] ) })
+      do( {identify_peaks( .$position, .$signal, method='PoT', .$peak_param[1] ) }) %>%
+      left_join( df, by=c('protein_ID', 'Group', 'Start'='position')) %>%
+      rename( Start.index = index ) %>% select( Group, protein_ID, Peak, Start, End, Start.index) %>%
+      left_join( df, by=c('protein_ID', 'Group', 'End'='position')) %>%
+      rename( End.index = index ) %>% select( Group, protein_ID, Peak, Start, End, Start.index, End.index)
+  }else{
+    Peaks <- data.frame(Group=NULL, protein_ID=NULL, Peak=NULL, Start=NULL, End=NULL, Start.index=NULL, End.index=NULL)
   }
 
-  # combos <- expand.grid(Group=levels(df$Group),                                   # figure out how many sequences
-  #                       Trt=levels(df$Treatment),                                 # and treatment combinations we have
-  #                       Rep=levels(df$Rep))                                       # so we know how tall/wide the resulting image
-  n <- max(df$index)                                                                # will approximately be
-  p <- length(unique(df$Group))
+  n <- max(df$index)                # For the width of the graph
+  p <- length(unique(df$Group))     # For the height of the graph
 
-  if( is.null(height) ){ height=p+3 }                                             # Default values for height/width
+  if( is.null(height) ){ height=2*p+3 }           # Default values for height/width
   if( is.null(width) ){ width = n/100 }
 
   if( is.null(ymin) ){ ymin=min(df$signal,na.rm=TRUE) }
@@ -89,16 +83,18 @@ plot_pulldown <- function( file, output_file='pulldown.pdf',
     geom_point(data=df, aes(x=position, y=signal), size=.2) +
     #facet_grid( Group ~ protein_ID, scales='free_x', space='free_x') +
     facet_grid( Group ~ protein_ID, scale='free', space='free_x')
-  if( peaks == TRUE ){
+
+  if( peaks == TRUE & nrow(Peaks) >= 1 ){
     P <- P + geom_rect( data=Peaks, alpha=0.4, aes(xmin=Start, xmax=End, ymin=-Inf, ymax=Inf), fill='salmon')
   }
+
   if( scales == 'fixed' ){
     P <- P + coord_cartesian(ylim = c(ymin, ymax))
   }
 
   ggsave(plot=P, filename=output_file, width = width, height=height, limitsize=FALSE)
 
-  invisible(df)  # return the data (invisibly!)
+  return(invisible(P))  # return the plot (invisibly!)
 }
 
 

@@ -10,7 +10,7 @@
 #' @param uncleaved The uncleaved raw counts
 #' @param ref The raw counts of the reference library. Ideally these should be
 #'            identical, but the library likely isn't equally weighted
-#' @param type Either `addititive` or `multiplicative`.
+#' @param type Either `addititive`, `multiplicative`, or `complex`.
 #' @examples
 #' df <- data.frame( cleaved   = c(20, 10,5),
 #'                   uncleaved = c(5, 5, 2),
@@ -30,8 +30,19 @@ standardize <- function(cleaved, uncleaved, ref=NULL, type='additive'){
     out <- (cleaved/sum(cleaved, na.rm = TRUE) - uncleaved/sum(uncleaved, na.rm=TRUE)) / ( ref / sum(ref) )
   }else if(type == 'multiplicative'){
     out <- (cleaved/sum(cleaved, na.rm=TRUE)) / (uncleaved/sum(uncleaved, na.rm=TRUE))
+  }else if(type == 'complex'){
+    background_cleaved   <- background_rate(cleaved)
+    background_uncleaved <- background_rate(uncleaved)
+
+    cleaved_p   = cleaved   / background_cleaved
+    cleaved_p   = cleaved_p / max(cleaved_p)
+    uncleaved_p = uncleaved / background_uncleaved
+    uncleaved_p = uncleaved_p / max(uncleaved_p)
+    diff_p      = cleaved - uncleaved
+    diff_p      = diff_p / max(diff_p)
+    out = cleaved_p + uncleaved_p + abs(diff_p)
   }else{
-    stop("type must be either 'additive' or 'multiplicative'")
+    stop("type must be either 'additive', 'multiplicative', or 'complex'")
   }
   return(out)
 }

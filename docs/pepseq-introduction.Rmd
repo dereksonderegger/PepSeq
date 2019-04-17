@@ -154,3 +154,26 @@ plot_pulldown_Shiny(
   peak_method = 'PoT',              # Use "Peaks over Threshold"
   peak_param = c(10, 10) )          # thresholds are by row 
 ```
+
+
+Another thing that we want to be able to do is to plot the cleaved vs uncleaved.  Suppose we have
+a pulldown with several different experiments and we want to explore which ones are better by plotting
+the cleaved vs uncleaved.
+
+```{r}
+input_file  <- '~/GitHub/PepSeq/inst/extdata/counts_annotated_PTX_short.csv'
+
+foo <- read.csv(input_file); colnames(foo); # figure out which columns to use
+
+data_input <- import_pulldown(
+  file = input_file,                # input file
+  protein_column = 'protein_ID',    # which is the protein name
+  position_column = 'Peptide.start',     # which is the starting location
+  read_indicator = c(21:24,27:30,35:38,46:47))             # column range to be visualized
+
+ggplot(data_input, aes(x=uncleaved, y=cleaved)) +
+  geom_point() +
+  facet_wrap( ~ Group )
+
+```
+

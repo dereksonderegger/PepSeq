@@ -8,13 +8,7 @@
 #' @param param A parameter controling how many peaks are detected. For PoT, it is the treshold.
 #' @return A data frame with columns `Peak`, `Start`, and `End`.
 #' @export
-identify_peaks <- function(x, y, method='PeakSeg', param=NA){
-  # if(length(method) > 1){
-  #   method = unique(method)
-  # }
-  # if( length(param) > 1){
-  #   param = unique(param)
-  # }
+identify_peaks <- function(x, y, method='PoT', param=NA, min_peak_length=1, merge_peak_gap=2){
 
   if(method == 'PoT' ){
     foo <-  data.frame(x=x, y=y) %>% arrange(x) %>% mutate(z=row_number() )
@@ -47,12 +41,33 @@ identify_peaks <- function(x, y, method='PeakSeg', param=NA){
         fit$segments %>%
         filter(status == 'peak') %>%
         rename(Start=chromStart, End=chromEnd) %>%
-        mutate(Peak = 1:n()) %>%
+        mutate( Peak = row_number() ) %>%
         select(Peak, Start, End)
     }
   }
 
+  # out <- data.frame( Start = c(10, 40, 60, 72, 82, 100, 120, 140, 147),
+  #                    End   = c(20, 45, 70, 80, 90, 110, 120, 145, 155) ) %>%
+  #   mutate( Peak = 1:n() )
+  # out <- tibble( Start = 1, End=1, Peak=1 ) %>% filter(Peak > 10)
+
+  # merge peaks separated by less than merge_peak_gap
+  out <- out %>%
+    mutate( gap = c(NA, Start[-1] - End[-n()]),
+            merge = ifelse(gap <= merge_peak_gap, TRUE, FALSE),
+            merge = ifelse( is.na(merge), FALSE, merge ),
+            delta = 1,
+            Peak = cumsum( delta*!merge ) ) %>%
+    group_by(Peak) %>%
+    summarize( Start = min(Start), End = max(End) )
+
+  # Remove all peaks where the peaks are smaller than min_peak_length
+  out <- out %>% ungroup() %>%
+    mutate( width = End - Start ) %>%
+    filter( width >= min_peak_length ) %>%
+    mutate( Peak = row_number() ) %>%
+    select(Peak, Start, End)
+
   return(out)
 }
-
 

@@ -14,7 +14,7 @@ standardize(cleaved, uncleaved, ref = NULL, type = "additive")
 \item{ref}{The raw counts of the reference library. Ideally these should be
 identical, but the library likely isn't equally weighted}
 
-\item{type}{Either `addititive` or `multiplicative`.}
+\item{type}{Either `addititive`, `multiplicative`, or `complex`.}
 }
 \description{
 There are two different ways to handles standardization of

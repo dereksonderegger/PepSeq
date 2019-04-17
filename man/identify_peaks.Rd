@@ -4,7 +4,8 @@
 \alias{identify_peaks}
 \title{Identify Peaks}
 \usage{
-identify_peaks(x, y, method = "PeakSeg", param = NA)
+identify_peaks(x, y, method = "PoT", param = NA, min_peak_length = 1,
+  merge_peak_gap = 2)
 }
 \arguments{
 \item{x}{A vector x-values.}

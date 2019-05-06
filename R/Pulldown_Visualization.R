@@ -67,7 +67,7 @@ plot_pulldown <- function( input, output_file='pulldown.pdf',
       rename( Start.index = index ) %>% select( Group, protein_ID, Peak, Start, End, Start.index) %>%
       left_join( df, by=c('protein_ID', 'Group', 'End'='position')) %>%
       rename( End.index = index ) %>% select( Group, protein_ID, Peak, Start, End, Start.index, End.index)
-    print(paste( 'Number of Peaks detected:', nrow(Peaks) ))
+    Peaks %>% group_by(Group) %>% count() %>% rename(`Number of Peaks` = n) %>% print()
   }else{
     Peaks <- data.frame(Group=NULL, protein_ID=NULL, Peak=NULL, Start=NULL, End=NULL, Start.index=NULL, End.index=NULL)
   }

@@ -78,7 +78,7 @@ Once the data has been read in, it can then be passed to the visualization progr
 
 ```{r}
 plot_pulldown( 
-  data_input,                       # input data
+  input = data_input,               # input data
   output_file = output_file,        # output file name
   peaks = TRUE,                     # Show the peaks
   peak_method = 'PoT',              # Use "Peaks over Threshold"

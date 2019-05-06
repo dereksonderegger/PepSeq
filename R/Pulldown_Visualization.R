@@ -45,13 +45,15 @@ plot_pulldown <- function( input, output_file='pulldown.pdf',
                            peaks=TRUE, peak_method='PoT', peak_param=NA,
                            scales = 'fixed'){
 
-  # import the data, if the user didn't just pass it in
+  df = input
+
   if( is.character(input) ){
-    df <- import_pulldown(file, standardization_method, read_indicator, protein_column, position_column)
-  }else{
-    df <- input
+    stop('input should be a data frame. Use import_pulldown() to load the data first!')
   }
 
+  if( peaks & any(is.na(peak_param)) ){
+    stop('peaks is TRUE, but peak_param is NA and there is no default value')
+  }
 
   # figure out peaks
   if( peaks == TRUE ){
@@ -65,6 +67,7 @@ plot_pulldown <- function( input, output_file='pulldown.pdf',
       rename( Start.index = index ) %>% select( Group, protein_ID, Peak, Start, End, Start.index) %>%
       left_join( df, by=c('protein_ID', 'Group', 'End'='position')) %>%
       rename( End.index = index ) %>% select( Group, protein_ID, Peak, Start, End, Start.index, End.index)
+    print(paste( 'Number of Peaks detected:', nrow(Peaks) ))
   }else{
     Peaks <- data.frame(Group=NULL, protein_ID=NULL, Peak=NULL, Start=NULL, End=NULL, Start.index=NULL, End.index=NULL)
   }

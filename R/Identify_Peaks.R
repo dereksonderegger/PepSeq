@@ -71,3 +71,31 @@ identify_peaks <- function(x, y, method='PoT', param=NA, min_peak_length=1, merg
   return(out)
 }
 
+
+
+
+#' Multivariate standardization using Cleaved/Uncleaved responses
+#'
+#' Given multiple sequences of (x,y) pairs, create a vector idenifying the peaks.
+#'
+#' @param data A data frame contain an index, cleaved and uncleaved columns.
+#' @param index Which column in the data set corresponds to the index
+#' @param cleaved Which column in the data set corresponds to the cleaved
+#' @param uncleaved Which column in the data set corresponds to the uncleaved values
+#' @export
+identify_peaks2 <- function(data, index='index', cleaved='Cleaved', uncleaved='Uncleaved'){
+  data <- data %>% rename_('cleaved' = cleaved, 'uncleaved'=uncleaved)
+  background_cleaved   <- background_rate(data$cleaved)
+  background_uncleaved <- background_rate(data$uncleaved)
+
+  data %>%
+    mutate( cleaved_p   = cleaved   / background_cleaved,
+            cleaved_p   = cleaved_p / max(cleaved_p),
+            uncleaved_p = uncleaved / background_uncleaved,
+            uncleaved_p = uncleaved_p / max(uncleaved_p),
+            diff_p      = cleaved - uncleaved,
+            diff_p      = diff_p / max(diff_p) ) %>%
+    mutate( signal = cleaved_p + uncleaved_p + abs(diff_p) ) %>%
+    pull(signal) %>% return()
+}
+

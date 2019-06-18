@@ -12,7 +12,7 @@ identify_peaks <- function(x, y, method='PoT', param=NA, min_peak_length=1, merg
 
   if(method == 'PoT' ){
     foo <-  data.frame(x=x, y=y) %>% arrange(x) %>% mutate(z=row_number() )
-    if( is.null(param) | is.na(param) ){
+    if( is.null(param) | any(is.na(param)) ){
       message('Using default threshold')
       param <- foo %>%
         mutate( q=rank(y) / n(), logq = log(q)   ) %>%

@@ -46,18 +46,19 @@ per line and then several sets of cleaved/uncleaved pairs and possibly columns o
 read.csv(input_file) %>% colnames()
 ```
 
-Notice that in the example pulldown file, there is just one experiment (wTEV) and two other added columns model of neural net model predictions and if the number of literature citations.  The orderings of all the columns doesn't matter, but you need to be able to identify the protein and position columns and each of the cleaved/uncleaved pairs need to have the same prefix followed by an '_Cleaved' or '_Uncleaved'.  If there is no 'Cleaved' or 'Uncleaved' suffix on a column then we assume the column is a measurement and will be data to be visualized.
+Notice that in the example pulldown file, there is just one experiment (wTEV) and two other added columns model of neural net model predictions and if the number of literature citations.  The orderings of all the columns doesn't matter, but you need to be able to identify the protein and position columns and each of the cleaved/uncleaved pairs need to some sort of cleaved/uncleaved prefix or postfix. For example, columns might have a group name followed by an '_Cleaved' or '_Uncleaved'.  Alternatively, the column names might begin with 'Cl_' or 'Un_'. So long as the `Cleaved_Type_Indicators` denotes them as a vector strings (order is cleaved then uncleaved), then the function will search for those two strings within the column name and appropriately identify the cleaved and uncleaved values. If a column name doesn't contain the 'Cleaved' or 'Uncleaved' suffix on a column then we assume the column is a measurement and we will directly pass the values through without separating the cleaved/uncleaved and doing any standardization.
 
 In order to allow there to be many other interesting columns that should be ignored in the visualization, `PepSeq` requires you to indicate which columns are to be plotted by either having an initial suffix indicating it is data or to indicate the responses by column location (e.g. columns 3 to 6).
 
 ```{r}
 # There is a function to import from a .csv data file
 data_input <- import_pulldown(
-  input_file, 
+  file = input_file, 
   standardization_method = 'additive',
   protein_column = 'Protein_ID', 
   position_column = 'Start_Loc',
-  read_indicator = 3:6)
+  read_indicator = 3:6,
+  Cleaved_Type_Indicators = c('_Cleaved', '_Uncleaved')  )  # cleaved/uncleaved columns end with _Cleaved or _Uncleaved
 ```
 
 
@@ -68,7 +69,8 @@ data_input <- import_pulldown(
   standardization_method = 'additive',
   protein_column = 'Protein_ID',    # which is the protein name
   position_column = 'Start_Loc',    # which is the starting location
-  read_indicator = c(3,4,5,6))      # column range to be visualized
+  read_indicator = c(3,4,5,6),      # column range to be visualized
+  Cleaved_Type_Indicators = c('_Cleaved', '_Uncleaved') )
 ```
 
 Notice that in each of the calls, we also had to specify which column specified the protein name and which column denotes the position along the protein.
@@ -112,7 +114,7 @@ A similar trick can be done for the scaling the height and width of the pdf outp
 
 ```{r}
 plot_pulldown( 
-  data_input,                       # input data
+  input = data_input,               # input data
   output_file = output_file,        # output file name
   peaks = TRUE,                     # Show the peaks
   peak_method = 'PoT',              # Use "Peaks over Threshold"
@@ -139,7 +141,8 @@ data_input <- import_pulldown(
   file = input_file,                # input file
   protein_column = 'protein_ID',    # which is the protein name
   position_column = 'position',     # which is the starting location
-  read_indicator = 'X')             # column range to be visualized
+  read_indicator = 'X',             # column range to be visualized
+  Cleaved_Type_Indicators = c('_cleaved', '_uncleaved'))
 
 # Now make a smaller set of data that only includes X01.01 and X04.04
 data_small <- data_input%>%
@@ -149,10 +152,10 @@ data_small <- data_input%>%
 
 ```{r, eval=FALSE}
 plot_pulldown_Shiny( 
-  data_small,                       # input data
-  peaks = TRUE,                     # Show the peaks
-  peak_method = 'PoT',              # Use "Peaks over Threshold"
-  peak_param = c(10, 10) )          # thresholds are by row 
+  input = data_small,             # input data
+  peaks = TRUE,                   # Show the peaks
+  peak_method = 'PoT',            # Use "Peaks over Threshold"
+  peak_param = c(1, 1) )          # thresholds are by row 
 ```
 
 
@@ -169,7 +172,8 @@ data_input <- import_pulldown(
   file = input_file,                # input file
   protein_column = 'protein_ID',    # which is the protein name
   position_column = 'Peptide.start',     # which is the starting location
-  read_indicator = c(21:24,27:30,35:38,46:47))             # column range to be visualized
+  read_indicator = c(21:24,27:30,35:38,46:47),             # column range to be visualized
+  Cleaved_Type_Indicators = c('_cleaved', '_uncleaved') )
 
 ggplot(data_input, aes(x=uncleaved, y=cleaved)) +
   geom_point() +

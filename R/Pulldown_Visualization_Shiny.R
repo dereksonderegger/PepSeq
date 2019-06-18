@@ -33,13 +33,12 @@
 plot_pulldown_Shiny <- function(input, height=400,
                                 peaks=FALSE, peak_method='PoT', peak_param=NA){
 
-  if( is.character(input) ){
-    stop('input should be a data frame. Use import_pulldown() to load the data first!')
-  }
+  df = input
 
+  if( is.character(input) ){
+    stop('input should be a data frame. Use import_pulldown() to load the data first!') }
   if( peaks & any(is.na(peak_param)) ){
-    stop('peaks is TRUE, but peak_param is NA and there is no default value')
-  }
+    stop('peaks is TRUE, but peak_param is NA and there is no default value') }
 
   # figure out peaks
   if( peaks == TRUE ){
@@ -53,6 +52,7 @@ plot_pulldown_Shiny <- function(input, height=400,
       rename( Start.index = index ) %>% select( Group, protein_ID, Peak, Start, End, Start.index) %>%
       left_join( df, by=c('protein_ID', 'Group', 'End'='position')) %>%
       rename( End.index = index ) %>% select( Group, protein_ID, Peak, Start, End, Start.index, End.index)
+    # Print out the number of peaks
     Peaks %>% group_by(Group) %>% count() %>% rename(`Number of Peaks` = n) %>% print()
   }else{
     Peaks <- data.frame(Group=NULL, protein_ID=NULL, Peak=NULL, Start=NULL, End=NULL, Start.index=NULL, End.index=NULL)
@@ -141,7 +141,9 @@ plot_pulldown_Shiny <- function(input, height=400,
           Peaks.small <- Peaks %>%
             filter( End.index > xmin, Start.index < xmax ) %>%
             filter( Group %in% input$groups )
-          P <- P +  geom_rect( data=Peaks.small, alpha=0.4, aes(xmin=Start, xmax=End, ymin=-Inf, ymax=Inf), fill='salmon')
+          if(nrow(Peaks.small) > 0){
+            P <- P +  geom_rect( data=Peaks.small, alpha=0.4, aes(xmin=Start, xmax=End, ymin=-Inf, ymax=Inf), fill='salmon')
+          }
         }
         P
       },

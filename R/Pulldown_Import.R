@@ -2,7 +2,7 @@
 #'
 #' This function is intended to be how users import data from a pulldown.
 #'
-#' @param file The input .csv file. It can be a full path to a file or a
+#' @param file The input .csv, .xls, or .xlsx file. It can be a full path to a file or a
 #'             relative path from the current working directory.
 #'
 #' @param standardization_method The method by which the cleaved and uncleaved read
@@ -20,49 +20,63 @@
 #'
 #' @export
 import_pulldown <- function( file, standardization_method = 'additive',
-                             read_indicator = 'X', protein_column = 'protein_ID',
-                             position_column = 'position' ){
+                             read_indicator = 'X',
+                             protein_column = 'protein_ID', position_column = 'Peptide.start',
+                             Cleaved_Type_Indicators = c('Cl_','Un_') ){
 
-  # I should eventually allow this to be an Excel file...  Steal the code from BurkPx.
-  df <- read.csv(file) %>%
-    rename_( protein_ID = protein_column,
-             position   = position_column)
+  # Read in the data: from either a .xls or .csv file
+  if( is.character(file) ){
+    if( str_detect(file, fixed('.csv'))){
+      df <- read.csv(file)
+    }else{
+      df <- readxl::read_xls(file)
+    }
+  }
 
+  # make the protein and position names consistent
+  df <- df %>% rename(protein_ID = protein_column, position = position_column)
+
+  # Get rid of the extraneous columns
   if( is.character( read_indicator )){
     df <- df %>% select( protein_ID, position, starts_with(read_indicator )  )    # specify data columns by name
   }else{
     df <- df %>% select( protein_ID, position,             read_indicator )       # specify data columns by locaton
   }
 
+  # Turn this into a long dataframe
   df <- df %>%
     arrange( protein_ID, position ) %>%                                           # No guarentee user hasn't sent in mixed up rows
-    mutate(index = 1:n()) %>%                                                     # create a peptide_ID column
+    mutate( index = 1:n() ) %>%
     gather(key='Type', value='Value', -protein_ID, -position, -index) %>%         # convert to a _long_ orientation
     drop_na() %>%                                                                 # Get rid of missing values
     mutate( protein_ID = factor(protein_ID),
             protein_ID = fct_reorder(protein_ID, index) )
 
-  df1 <- df %>%
-    filter(!str_detect(Type, fixed('cleave', ignore_case = TRUE))) %>%
-    rename(Group = Type, signal = Value) %>%
-    mutate(cleaved=NA, uncleaved=NA) %>%
-    select(protein_ID, position, index, Group, cleaved, uncleaved, signal)
 
-  df2 <-
-    df %>% filter( str_detect(Type, fixed('cleave', ignore_case = TRUE))) %>%
-    mutate( Type = stringi::stri_reverse(Type) ) %>%                              # reversing because cleaved/uncleaved is at the end
-    separate(Type, c('Cleave', 'Group'), sep=fixed('_'), extra='merge') %>%       # split on the first '_'
-    mutate(Cleave = stringi::stri_reverse(Cleave),                                # undo my reversing operation
-           Group  = stringi::stri_reverse(Group)) %>%
-    arrange(Group, protein_ID, position, Cleave) %>%
-    mutate(Cleave = str_to_lower(Cleave)) %>%                                     # get rid of non-consistent capitalizations
-    spread(key=Cleave, value=Value) %>%
+  # Add a column denoting if the observation is from a cleaved or uncleaved observation.
+  Index <- which( str_detect( df$Type, fixed(Cleaved_Type_Indicators[1])) |
+                  str_detect( df$Type, fixed(Cleaved_Type_Indicators[2])) )
+
+
+  df1 <- df[Index, ] %>%
+      mutate( Cleave = ifelse( str_detect(.$Type, fixed(Cleaved_Type_Indicators[1])), 'cleaved', 'uncleaved') ) %>%
+      mutate( Group = str_remove(.$Type,  fixed(Cleaved_Type_Indicators[1]) )) %>%
+      mutate( Group = str_remove(.$Group, fixed(Cleaved_Type_Indicators[2]) )) %>%
+    select( index, protein_ID, position, Group, Cleave, Value) %>%
+    group_by( index, protein_ID, position, Group ) %>% spread(key=Cleave, value=Value) %>% ungroup() %>%
     mutate( signal = PepSeq::standardize(.$cleaved, .$uncleaved,                  ##
-                                         type = standardization_method))          ## standardize to combine cleaved/uncleaved values
+                                           type = standardization_method))          ## standardize to combine cleaved/uncleaved values
+
+
+  df2 <- df[-Index, ] %>%
+    mutate( cleaved = NA, uncleaved = NA ) %>%
+    rename(signal = Value, Group = Type ) %>%
+    select( index, protein_ID, position, Group, cleaved, uncleaved, signal)
+
 
   out <- rbind( df1, df2 )
-
   return(out)
+
 }
 
 

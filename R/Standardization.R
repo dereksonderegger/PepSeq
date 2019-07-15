@@ -11,6 +11,7 @@
 #' @param ref The raw counts of the reference library. Ideally these should be
 #'            identical, but the library likely isn't equally weighted
 #' @param type Either `addititive`, `multiplicative`, or `complex`.
+#' @param scale Should we scale to have the maximum between 100 and 1000?
 #' @examples
 #' df <- data.frame( cleaved   = c(20, 10,5),
 #'                   uncleaved = c(5, 5, 2),
@@ -18,32 +19,49 @@
 #' with(df, standardize( cleaved, uncleaved, ref ) )
 #' with(df, standardize( cleaved, uncleaved, type='multiplicative' ) )
 #' @export
-standardize <- function(cleaved, uncleaved, ref=NULL, type='additive'){
+standardize <- function(cleaved, uncleaved, ref=NULL, type='additive', scale=TRUE){
+
+  # Make a data frame of the input stuff
+  df <- data.frame( cleaved=cleaved, uncleaved=uncleaved )
+
+  # Make the reference group default correct
   if( is.null(ref) ){
-    ref = rep(1/length(cleaved), length(cleaved))
+    df$ref = 1
+  }else{
+    df$ref = ref
   }
-  # else{
+
   # Do some error checking making sure the reference numbers aren't too
   # small.  Zeros would be a huge problem for the reference.
-  # }
-  if( type == 'additive' ){
-    out <- (cleaved/sum(cleaved, na.rm = TRUE) - uncleaved/sum(uncleaved, na.rm=TRUE)) / ( ref / sum(ref) )
-  }else if(type == 'multiplicative'){
-    out <- (cleaved/sum(cleaved, na.rm=TRUE)) / (uncleaved/sum(uncleaved, na.rm=TRUE))
-  }else if(type == 'complex'){
-    background_cleaved   <- background_rate(cleaved)
-    background_uncleaved <- background_rate(uncleaved)
 
-    cleaved_p   = cleaved   / background_cleaved
-    cleaved_p   = cleaved_p / max(cleaved_p)
-    uncleaved_p = uncleaved / background_uncleaved
-    uncleaved_p = uncleaved_p / max(uncleaved_p)
-    diff_p      = cleaved - uncleaved
-    diff_p      = diff_p / max(diff_p)
-    out = cleaved_p + uncleaved_p + abs(diff_p)
+  # standardize for the read depth
+  df <- df %>%
+    mutate( cleaved = cleaved / sum(cleaved, na.rm=TRUE),
+            uncleaved = uncleaved / sum(uncleaved, na.rm=TRUE) )
+
+  # Now make the standardization.
+  if( type == 'additive' ){
+    df <- df %>% mutate( signal = (cleaved - uncleaved) / ref )
+  }else if(type == 'multiplicative'){
+    df <- df %>% mutate( signal = cleaved / uncleaved )
+  }else if(type == 'complex'){
+    # This is for some experimental work
+    df <- df %>% mutate( signal = cleaved - uncleaved )
   }else{
-    stop("type must be either 'additive', 'multiplicative', or 'complex'")
+    stop("type must be either 'additive', 'multiplicative', 'complex', or 'none' ")
   }
-  return(out)
+
+  # I want the maximum signal to live between 100 and 1000
+  scale <- (1 / max(df$signal, na.rm=TRUE)) %>%
+    log10() %>% ceiling() %>% (function(x){10^x})
+  df$signal <- df$signal * scale * 100
+
+
+  return(df$signal)
+
 }
 
+
+
+
+#' Ceiling to nearest

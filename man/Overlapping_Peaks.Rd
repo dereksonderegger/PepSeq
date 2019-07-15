@@ -15,12 +15,12 @@ B <- data.frame(Start=c(3,24,60,120), End=c( 7,28,63,130))
 Overlapping_Peaks(A, B)
 
 A <- data.frame(
-  Start = c( 9,20,10,100),
-  End   = c(12,25,15,199),
+  Start = c( 9,20,10,25),
+  End   = c(12,25,15,35),
   Grp   = c('A','A','B','B') )
 B <- data.frame(
-  Start = c( 3,24,10,120),
-  End   = c( 7,28,13,130),
+  Start = c( 3,24,10,20),
+  End   = c( 7,28,13,25),
   Grp   = c('A','A','B','B') )
 Overlapping_Peaks(A, B, group_by='Grp')
 }

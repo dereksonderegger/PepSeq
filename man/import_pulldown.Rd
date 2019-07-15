@@ -2,14 +2,15 @@
 % Please edit documentation in R/Pulldown_Import.R
 \name{import_pulldown}
 \alias{import_pulldown}
-\title{Reads an input .csv file and organizes it for visualization}
+\title{Reads an input pulldown .csv file and organizes it for visualization}
 \usage{
 import_pulldown(file, standardization_method = "additive",
   read_indicator = "X", protein_column = "protein_ID",
-  position_column = "position")
+  position_column = "Peptide.start", Cleaved_Type_Indicators = c("Cl_",
+  "Un_"))
 }
 \arguments{
-\item{file}{The input .csv file. It can be a full path to a file or a
+\item{file}{The input .csv, .xls, or .xlsx file. It can be a full path to a file or a
 relative path from the current working directory.}
 
 \item{standardization_method}{The method by which the cleaved and uncleaved read

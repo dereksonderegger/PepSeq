@@ -6,7 +6,7 @@
 \usage{
 plot_pulldown(input, output_file = "pulldown.pdf", height = NULL,
   width = NULL, ymin = NULL, ymax = NULL, peaks = TRUE,
-  peak_method = "PoT", peak_param = NA, scales = "fixed")
+  peak_method = "PoT", peak_param = NA, scales = "free_y")
 }
 \arguments{
 \item{input}{The input data frame read in using the
@@ -33,7 +33,7 @@ is the number of sequences / 1000.}
 
 \item{peak_param}{A parameter which controls the peak finding method. For PoT, it is the threshold.}
 
-\item{scales}{Contols if the y-scale should be 'fixed' across the rows or if the y-scales should be 'free'
+\item{scales}{Contols if the y-scale should be 'fixed_y' across the rows or if the y-scales should be 'free_y'
 to vary across the different rows.}
 }
 \description{

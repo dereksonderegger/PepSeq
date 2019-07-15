@@ -30,8 +30,7 @@
 #' plot_pulldown_Shiny(file, read_indicator='Y_')
 #'
 #' @export
-plot_pulldown_Shiny <- function(input, height=400,
-                                peaks=FALSE, peak_method='PoT', peak_param=NA){
+plot_pulldown_Shiny <- function(input, height=400, peaks=FALSE, peak_method='PoT', peak_param=NA){
 
   df = input
 
@@ -47,7 +46,7 @@ plot_pulldown_Shiny <- function(input, height=400,
       #mutate( signal = signal %>% pmax(signal,0) %>% as.integer() ) %>%
       left_join(Peak_Params, by='Group') %>%
       group_by(Group, protein_ID) %>%
-      do( {identify_peaks( .$position, .$signal, method='PoT', .$peak_param[1] ) }) %>%
+      do( {identify_peaks_aux( .$position, .$signal, method='PoT', .$peak_param[1] ) }) %>%
       left_join( df, by=c('protein_ID', 'Group', 'Start'='position')) %>%
       rename( Start.index = index ) %>% select( Group, protein_ID, Peak, Start, End, Start.index) %>%
       left_join( df, by=c('protein_ID', 'Group', 'End'='position')) %>%

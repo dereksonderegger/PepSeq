@@ -1,0 +1,175 @@
+---
+title: "Introduction to PepSeq"
+author: "Derek Sonderegger"
+date: "`r Sys.Date()`"
+output: word_document
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+`PepSeq` is a package developed to facilitate the exploration of PMI's PepSeq data.  Given a pulldown, we want to explore how the cleaved-uncleaved signal varies across different locations in the proteins. 
+
+To begin, we will install the package via the following R commands:
+```{r, eval=FALSE}
+# install PepSeq package from Github. This is only necessary when upgrading to a new version
+library(devtools)
+install_github('dereksonderegger/PepSeq')  # install latest version of Derek's PepSeq tools
+```
+
+```{r, message=FALSE, warning=FALSE}
+library(tidyverse)   # load the usual set of data processing tools
+library(PepSeq)      # load Derek's library of routines
+```
+
+The first step is to set the working directory to wherever the pulldown .csv file is located.  This can be done via the point and click interface (Session -> Set Working Directory) or using the command `setwd`.  Once the working directory is set to where ever the data file lives, you can define the input file.
+```{r}
+setwd('~/GitHub/PepSeq/inst/extdata')
+input_file <- '2019_06_25_Pulldown.csv'
+```
+
+
+Alternatively, you could just list the full pathname to the input and output files and ignore the working directory business. 
+```{r}
+input_file  <- '~/GitHub/PepSeq/inst/extdata/2019_05_10_Pulldown.csv'
+# input_file  <- '~/GitHub/PepSeq/data-raw/2019_05_10_Pulldown.csv'
+```
+
+
+`PepSeq` assumes that a pulldown .csv file is arrange in a format with one protein/location combination
+per line and then several sets of cleaved/uncleaved pairs and possibly columns of data that aren't cleaved/uncleaved but rather just some other signal (e.g. output from another model as to the likelihood of binding). There are also several columns that define meta data that we don't need in our program, but will need to include in subsequent output.
+
+```{r}
+read.csv(input_file) %>% colnames()
+```
+
+The orderings of all the columns doesn't matter, but you need to be able to identify the protein and position columns and each of the cleaved/uncleaved pairs need to some sort of cleaved/uncleaved prefix or postfix. For example, columns might have a group name followed by an '_Cleaved' or '_Uncleaved'.  Alternatively, the column names might begin with 'Cl_' or 'Un_'. So long as the `Cleaved_Type_Indicators` denotes them as a vector strings (order is cleaved then uncleaved), then the function will search for those two strings within the column name and appropriately identify the cleaved and uncleaved values. If a column name doesn't contain the 'Cleaved' or 'Uncleaved' suffix on a column then we assume the column is a measurement and we will directly pass the values through without separating the cleaved/uncleaved and doing any standardization.
+
+In order to allow there to be many other interesting columns that should be ignored in the visualization, `PepSeq` requires you to indicate which columns are to be plotted by either having an initial suffix indicating it is data or to indicate the responses by column location (e.g. columns 3 to 6).
+
+```{r}
+# There is a function to import from a .csv data file
+data <- import_pulldown(
+  file = input_file, 
+  standardization_method = 'additive',
+  protein_column = 'Accession', 
+  position_column = 'Peptide.start',
+  read_indicator = 20:42,  # Which columns are data
+  Cleaved_Type_Indicators = c('Cl_', 'Un_')  )  # cleaved/uncleaved columns end with _Cleaved or _Uncleaved
+```
+
+What is this thing we've just read in?
+```{r}
+head(data)  # Lets look at the columns in the resulting data frame
+```
+The `protein_ID` and position came directly from the input file. The cleaved/uncleaved columns are the raw counts from the imput file with no adjusting for read depth. The signal column is calculated from the cleaved/uncleaved columns after accounting for read depth. 
+
+
+The import function produces a data frame where the "Group" column denotes the allele group we are working with.
+```{r}
+# The data file likely contains columns that are useful for identification of proteins. Or perhaps 
+# the raw peptide sequence. So the `import_pulldown_metadata` function allows us to  pick out
+# the meta data columns that you want.
+Meta_data <- import_pulldown_metadata(
+  file = input_file, 
+  protein_column = 'protein_ID', 
+  position_column = 'Peptide.start',
+  meta_columns = c('library_member', 'Peptide.seq')) 
+
+# By default the meta data is coming out as a factor.  I want them to be character strings.
+Meta_data <- Meta_data %>%
+  mutate(library_member = as.character(library_member),
+         Peptide.seq = as.character(Peptide.seq) )
+```
+
+Notice that in each of the calls, we also had to specify which column specified the protein name and which column denotes the position along the protein.
+
+
+# Simple Analyses
+
+First we consider how to make a simple scatter plot of the cleaved vs uncleaved counts for each allele. Because the cleaved/uncleaved columns in the data frame are not standardized to account for the read depth,  
+
+```{r}
+# ggplot( data, aes(x=log(uncleaved), y=log(cleaved) ) ) +
+data %>% 
+  group_by( Group ) %>%    # Do the standardization only across MHC experiments
+  mutate( uncleaved = uncleaved/sum(uncleaved) * 1e5,          # standardize the read depths...
+           cleaved  = cleaved/sum(cleaved)     * 1e5 ) %>%     # reads per 10,000
+  filter( Group %in% c('01.01_C', 'DRB1.15.02', '04.01_A') ) %>%   # if you only want one or more group
+ggplot( ., aes(x=uncleaved, y=cleaved ) ) +
+  geom_point() + 
+  geom_abline( intercept = 0, slope = 1, color='red') +
+  facet_wrap( ~ Group ) 
+```
+
+
+
+I want to show how to graph the standardized signal across proteins.
+```{r}
+data %>%
+  filter( Group %in% c('04.01_A') ) %>%     # Only do the 04.01_A run, include all Proteins!
+ggplot( ., aes(x = position, y=signal )) +
+  geom_point() +
+  facet_wrap( ~ protein_ID ) 
+```
+
+```{r, eval=FALSE}
+data %>%
+  filter( Group %in% c('01.01_C', '04.01_A') ) %>%
+  filter( protein_ID %in% c('AAZ38632.1', 'ABG80283.1') ) %>%
+plot_pulldown_Shiny(input=., height=600, 
+                    peaks = TRUE, peak_method = 'PoT', peak_param = 10)
+
+data %>%
+  filter( Group %in% c('01.01_C', '04.01_A') ) %>%
+  filter( protein_ID %in% c('AAZ38632.1', 'ABG80283.1') ) %>%
+  plot_pulldown(input=., peaks=TRUE, peak_param=10)
+```
+
+
+# Calculating the peaks
+
+There is one main user function in the `PepSeq` package used for calculating the peaks: 
+
+```{r}
+data %>%
+  filter( Group %in% c('01.01_C', '04.01_A') ) %>%
+  filter( protein_ID %in% c('AAZ38632.1', 'ABG80283.1') ) %>%
+identify_peaks(., method='PoT', param = NULL)
+
+```
+
+Next we want to take the peak information and include the meta information  so as to 
+figure out the full peptide sequence corresponding to the peak.
+
+```{r}
+peaks <- data %>%
+  filter( Group %in% c('01.01_C', '04.01_A') ) %>%
+  filter( protein_ID %in% c('AAZ38632.1', 'ABG80283.1') ) %>%
+  identify_peaks(., method='PoT', param = NULL)
+
+peaks %>% 
+  group_by(Group, protein_ID, Peak) %>%
+  group_modify( ~ tibble(position = .x$Start : .x$End ) ) %>%
+  left_join(Meta_data)
+
+```
+
+
+Next we want to take each of the sequences that compose the peak and 
+isolate the peak core, which we will define as the peptides that are in the
+all of the sequences that define the peak. The way we'll do that is to 
+take the first peptide sequence and peal off however many peptides are in the length.
+```{r}
+peaks %>% 
+  group_by(Group, protein_ID, Peak) %>%
+  mutate( position = Start, length = End - Start ) %>%
+  left_join(Meta_data) %>% 
+  mutate( Peptide.seq = str_sub( Peptide.seq, length+1 ) )
+  
+```
+

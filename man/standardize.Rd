@@ -4,7 +4,8 @@
 \alias{standardize}
 \title{Standardize counts relative to uncleaved counts.}
 \usage{
-standardize(cleaved, uncleaved, ref = NULL, type = "additive")
+standardize(cleaved, uncleaved, ref = NULL, type = "additive",
+  scale = TRUE)
 }
 \arguments{
 \item{cleaved}{The cleaved raw counts}
@@ -15,6 +16,8 @@ standardize(cleaved, uncleaved, ref = NULL, type = "additive")
 identical, but the library likely isn't equally weighted}
 
 \item{type}{Either `addititive`, `multiplicative`, or `complex`.}
+
+\item{scale}{Should we scale to have the maximum between 100 and 1000?}
 }
 \description{
 There are two different ways to handles standardization of

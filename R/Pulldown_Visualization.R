@@ -35,7 +35,7 @@
 #'
 #' @param peak_param A parameter which controls the peak finding method. For PoT, it is the threshold.
 #'
-#' @param scales Contols if the y-scale should be 'fixed' across the rows or if the y-scales should be 'free'
+#' @param scales Contols if the y-scale should be 'fixed_y' across the rows or if the y-scales should be 'free_y'
 #'              to vary across the different rows.
 #'
 #' @export
@@ -43,17 +43,14 @@ plot_pulldown <- function( input, output_file='pulldown.pdf',
                            height=NULL, width=NULL,
                            ymin=NULL, ymax=NULL,
                            peaks=TRUE, peak_method='PoT', peak_param=NA,
-                           scales = 'fixed'){
+                           scales = 'free_y'){
 
   df = input
 
   if( is.character(input) ){
-    stop('input should be a data frame. Use import_pulldown() to load the data first!')
-  }
-
+    stop('input should be a data frame. Use import_pulldown() to load the data first!') }
   if( peaks & any(is.na(peak_param)) ){
-    stop('peaks is TRUE, but peak_param is NA and there is no default value')
-  }
+    stop('peaks is TRUE, but peak_param is NA and there is no default value') }
 
   # figure out peaks
   if( peaks == TRUE ){
@@ -62,7 +59,7 @@ plot_pulldown <- function( input, output_file='pulldown.pdf',
       #mutate( signal = signal %>% pmax(signal,0) %>% as.integer() ) %>%
       left_join(Peak_Params, by='Group') %>%
       group_by(Group, protein_ID) %>%
-      do( {identify_peaks( .$position, .$signal, method='PoT', .$peak_param[1] ) }) %>%
+      do( {identify_peaks_aux( .$position, .$signal, method=peak_method, .$peak_param[1] ) }) %>%
       left_join( df, by=c('protein_ID', 'Group', 'Start'='position')) %>%
       rename( Start.index = index ) %>% select( Group, protein_ID, Peak, Start, End, Start.index) %>%
       left_join( df, by=c('protein_ID', 'Group', 'End'='position')) %>%
@@ -85,7 +82,7 @@ plot_pulldown <- function( input, output_file='pulldown.pdf',
     ggplot(df) +
     geom_point(data=df, aes(x=position, y=signal), size=.2) +
     #facet_grid( Group ~ protein_ID, scales='free_x', space='free_x') +
-    facet_grid( Group ~ protein_ID, scale='free', space='free_x')
+    facet_grid( Group ~ protein_ID, scale=scales, space='free_x')
 
   if( peaks == TRUE & nrow(Peaks) >= 1 ){
     P <- P + geom_rect( data=Peaks, alpha=0.4, aes(xmin=Start, xmax=End, ymin=-Inf, ymax=Inf), fill='salmon')

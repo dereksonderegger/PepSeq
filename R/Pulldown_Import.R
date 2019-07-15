@@ -1,4 +1,4 @@
-#' Reads an input .csv file and organizes it for visualization
+#' Reads an input pulldown .csv file and organizes it for visualization
 #'
 #' This function is intended to be how users import data from a pulldown.
 #'
@@ -18,6 +18,7 @@
 #'
 #' @param position_column A character string indicating which column corresponds to the position within a protein.
 #'
+#'
 #' @export
 import_pulldown <- function( file, standardization_method = 'additive',
                              read_indicator = 'X',
@@ -34,7 +35,12 @@ import_pulldown <- function( file, standardization_method = 'additive',
   }
 
   # make the protein and position names consistent
-  df <- df %>% rename(protein_ID = protein_column, position = position_column)
+  if( protein_column != 'protein_ID' &  ('protein_ID' %in% colnames(df)) ){
+    df <- df %>% select( -protein_ID ) %>%
+      rename(protein_ID = protein_column, position = position_column)
+  }else{
+    df <- df %>% rename(protein_ID = protein_column, position = position_column)
+  }
 
   # Get rid of the extraneous columns
   if( is.character( read_indicator )){
@@ -59,13 +65,15 @@ import_pulldown <- function( file, standardization_method = 'additive',
 
 
   df1 <- df[Index, ] %>%
-      mutate( Cleave = ifelse( str_detect(.$Type, fixed(Cleaved_Type_Indicators[1])), 'cleaved', 'uncleaved') ) %>%
-      mutate( Group = str_remove(.$Type,  fixed(Cleaved_Type_Indicators[1]) )) %>%
-      mutate( Group = str_remove(.$Group, fixed(Cleaved_Type_Indicators[2]) )) %>%
+    mutate( Cleave = ifelse( str_detect(.$Type, fixed(Cleaved_Type_Indicators[1])), 'cleaved', 'uncleaved') ) %>%
+    mutate( Group = str_remove(.$Type,  fixed(Cleaved_Type_Indicators[1]) )) %>%
+    mutate( Group = str_remove(.$Group, fixed(Cleaved_Type_Indicators[2]) )) %>%
     select( index, protein_ID, position, Group, Cleave, Value) %>%
-    group_by( index, protein_ID, position, Group ) %>% spread(key=Cleave, value=Value) %>% ungroup() %>%
-    mutate( signal = PepSeq::standardize(.$cleaved, .$uncleaved,                  ##
+    group_by( index, protein_ID, position, Group ) %>% spread(key=Cleave, value=Value) %>%
+    group_by(Group)  %>%
+    mutate( signal = PepSeq::standardize(cleaved, uncleaved,                        ##
                                            type = standardization_method))          ## standardize to combine cleaved/uncleaved values
+
 
 
   df2 <- df[-Index, ] %>%
@@ -74,7 +82,7 @@ import_pulldown <- function( file, standardization_method = 'additive',
     select( index, protein_ID, position, Group, cleaved, uncleaved, signal)
 
 
-  out <- rbind( df1, df2 )
+  out <- bind_rows( df1, df2 )
   return(out)
 
 }

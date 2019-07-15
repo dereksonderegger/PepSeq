@@ -4,21 +4,32 @@
 \alias{identify_peaks}
 \title{Identify Peaks}
 \usage{
-identify_peaks(x, y, method = "PoT", param = NA, min_peak_length = 1,
+identify_peaks(data, method = "PoT", param = NA, min_peak_length = 1,
   merge_peak_gap = 2)
 }
 \arguments{
-\item{x}{A vector x-values.}
-
-\item{y}{A vector of y-values.}
+\item{data}{A data frame of values}
 
 \item{method}{A character string denoting which method to use. Valid options are: PeakSeg and PoT}
 
 \item{param}{A parameter controling how many peaks are detected. For PoT, it is the treshold.}
+
+\item{min_peak_length}{The smallest length allowed for a peak}
+
+\item{merge_peak_gap}{If two peaks are separated for less than this amount, they are merged into
+a single peak.}
+
+\item{x}{The column name of the x-axis. Defaults to `position`.}
+
+\item{y}{The column name of the y-axis. Defaults to `signal`.}
+
+\item{protein}{The column name of groups that break up the x-axis. Defaults to `protein_ID`.}
+
+\item{Group}{The column name of the grouping variable for different experiments. Defaults to `Group`.}
 }
 \value{
-A data frame with columns `Peak`, `Start`, and `End`.
+A data frame with columns for `Group`, `protein_ID`, `Peak`, `Start`, and `End`.
 }
 \description{
-Given (x,y) pairs of datapoints, calculate peaks.
+Given an input data set, calculate peaks.
 }

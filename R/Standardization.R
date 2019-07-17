@@ -52,10 +52,11 @@ standardize <- function(cleaved, uncleaved, ref=NULL, type='additive', scale=TRU
   }
 
   # I want the maximum signal to live between 100 and 1000
-  scale <- (1 / max(df$signal, na.rm=TRUE)) %>%
-    log10() %>% ceiling() %>% (function(x){10^x})
-  df$signal <- df$signal * scale * 100
-
+  if( scale == TRUE ){
+    scale <- df %>% select(signal) %>% drop_na() %>% filter( signal < Inf) %>% pull(signal)
+    scale <- (1 / max(scale)) %>% log10() %>% ceiling() %>% (function(x){10^x})
+    df$signal <- df$signal * scale * 100
+  }
 
   return(df$signal)
 

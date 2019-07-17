@@ -129,6 +129,15 @@ identify_peaks <- function(data, # x='position', y='signal', protein='protein_ID
       mutate( Peak = cumsum(delta) - 1:n() + 1 ) %>%
       group_by(Group, protein_ID, Peak) %>% summarize( Start=min(position), End=max(position) ) %>%
       mutate( Peak = row_number() )
+  }else if( method == 'Z-score' ){
+    # Z-score method of Larmen et al.
+    # input parameter is the percentage of data to mask
+    data %>%
+      group_by( Group ) %>%
+      mutate( r = rank(signal, na.last = NA),
+              r = r / max(r) ) %>%
+      filter( r <= param ) %>%
+      summarise( alpha = 3, beta= 4)
 
   }else if( method == 'PeakSeg' & is.vector(x) ){
     if( length(unique(y)) <= 2 ){

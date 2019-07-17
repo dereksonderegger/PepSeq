@@ -11,8 +11,7 @@
 #' "XXX_uncleaved" pair, then we standardize the cleaved/uncleaved pair into a single
 #' response.  If the column has no pair, then we don't do any standardization with it.
 #'
-#' @param input The input data frame  read in using the
-#'              `import_pulldown()` function.
+#' @param input The input data frame  read in using the `import_pulldown()` function.
 #'
 #' @param height The height of the graph window (in pixels).
 #'

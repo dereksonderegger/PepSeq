@@ -56,10 +56,13 @@ In order to allow there to be many other interesting columns that should be igno
 data <- import_pulldown(
   file = input_file, 
   standardization_method = 'additive',
+  # standardization_method = 'multiplicative', scale=FALSE,
   protein_column = 'Accession', 
   position_column = 'Peptide.start',
-  read_indicator = 20:42,  # Which columns are data
+  read_indicator = 20:43,  # Which columns are data
   Cleaved_Type_Indicators = c('Cl_', 'Un_')  )  # cleaved/uncleaved columns end with _Cleaved or _Uncleaved
+
+#data %>% drop_na()
 ```
 
 What is this thing we've just read in?
@@ -112,6 +115,7 @@ I want to show how to graph the standardized signal across proteins.
 ```{r}
 data %>%
   filter( Group %in% c('04.01_A') ) %>%     # Only do the 04.01_A run, include all Proteins!
+  filter( protein_ID %in% c('ABG80283.1') ) %>%
 ggplot( ., aes(x = position, y=signal )) +
   geom_point() +
   facet_wrap( ~ protein_ID ) 
@@ -120,7 +124,7 @@ ggplot( ., aes(x = position, y=signal )) +
 ```{r, eval=FALSE}
 data %>%
   filter( Group %in% c('01.01_C', '04.01_A') ) %>%
-  filter( protein_ID %in% c('AAZ38632.1', 'ABG80283.1') ) %>%
+  # filter( protein_ID %in% c('AAZ38632.1', 'ABG80283.1') ) %>%
 plot_pulldown_Shiny(input=., height=600, 
                     peaks = TRUE, peak_method = 'PoT', peak_param = 10)
 
@@ -139,9 +143,17 @@ There is one main user function in the `PepSeq` package used for calculating the
 data %>%
   filter( Group %in% c('01.01_C', '04.01_A') ) %>%
   filter( protein_ID %in% c('AAZ38632.1', 'ABG80283.1') ) %>%
-identify_peaks(., method='PoT', param = NULL)
-
+  identify_peaks(., method='PoT', param = NULL)
 ```
+
+If you want to count how many peaks are in each group...
+```{r}
+data %>%
+  identify_peaks(., method = 'PoT', param=40 ) %>%
+  group_by(Group) %>% count() %>%
+  View()
+```
+
 
 Next we want to take the peak information and include the meta information  so as to 
 figure out the full peptide sequence corresponding to the peak.
@@ -150,13 +162,12 @@ figure out the full peptide sequence corresponding to the peak.
 peaks <- data %>%
   filter( Group %in% c('01.01_C', '04.01_A') ) %>%
   filter( protein_ID %in% c('AAZ38632.1', 'ABG80283.1') ) %>%
-  identify_peaks(., method='PoT', param = NULL)
+  identify_peaks(., method='PoT', param = 20, min_peak_length = 3)
 
 peaks %>% 
   group_by(Group, protein_ID, Peak) %>%
   group_modify( ~ tibble(position = .x$Start : .x$End ) ) %>%
   left_join(Meta_data)
-
 ```
 
 
@@ -166,10 +177,11 @@ all of the sequences that define the peak. The way we'll do that is to
 take the first peptide sequence and peal off however many peptides are in the length.
 ```{r}
 peaks %>% 
-  group_by(Group, protein_ID, Peak) %>%
-  mutate( position = Start, length = End - Start ) %>%
-  left_join(Meta_data) %>% 
-  mutate( Peptide.seq = str_sub( Peptide.seq, length+1 ) )
-  
+  group_by(Group, protein_ID, Peak) %>%                          # 
+  mutate( position = Start, length = End - Start ) %>%           #
+  left_join(Meta_data) %>%                                       #
+  mutate( Peptide.seq = str_sub( Peptide.seq, length+1 ) ) %>%   # Grab the core
+  write_csv('Peak_Output.csv')
+  #View()
 ```
 

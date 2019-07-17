@@ -25,6 +25,9 @@ column names of the response data.}
 \item{protein_column}{A character string indicating which column denotes the protein.}
 
 \item{position_column}{A character string indicating which column corresponds to the position within a protein.}
+
+\item{scale}{Should we rescale the signal result so that the maximum signal
+is between 100 and 1000.}
 }
 \description{
 This function is intended to be how users import data from a pulldown.

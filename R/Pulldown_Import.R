@@ -11,6 +11,8 @@
 #'
 #' @param scale Should we rescale the signal result so that the maximum signal
 #'              is between 100 and 1000.
+#' @param trim_proportion In the rescaling, what percent of the large values should be
+#'                        removed to get to a background rate.
 #'
 #' @param read_indicator An argument that identifies what columns are responses
 #'                       to be plotted. This could be either a vector of integers
@@ -23,7 +25,8 @@
 #'
 #'
 #' @export
-import_pulldown <- function( file, standardization_method = 'additive', scale=TRUE,
+import_pulldown <- function( file, standardization_method = 'additive',
+                             scale=TRUE, trim_proportion=0.25,
                              read_indicator = 'X',
                              protein_column = 'protein_ID', position_column = 'Peptide.start',
                              Cleaved_Type_Indicators = c('Cl_','Un_') ){
@@ -61,28 +64,29 @@ import_pulldown <- function( file, standardization_method = 'additive', scale=TR
             protein_ID = fct_reorder(protein_ID, index) )
 
 
-  # Add a column denoting if the observation is from a cleaved or uncleaved observation.
+  # An index of which observations is either cleaved or uncleaved. This SHOULD be all of the observations
+  # but if there is something that doesn't seem like cleaved/uncleaved then we'll just keep it
   Index <- which( str_detect( df$Type, fixed(Cleaved_Type_Indicators[1])) |
                   str_detect( df$Type, fixed(Cleaved_Type_Indicators[2])) )
-
 
   df1 <- df[Index, ] %>%
     mutate( Cleave = ifelse( str_detect(.$Type, fixed(Cleaved_Type_Indicators[1])), 'cleaved', 'uncleaved') ) %>%
     mutate( Group = str_remove(.$Type,  fixed(Cleaved_Type_Indicators[1]) )) %>%
     mutate( Group = str_remove(.$Group, fixed(Cleaved_Type_Indicators[2]) )) %>%
     select( index, protein_ID, position, Group, Cleave, Value) %>%
-    group_by( index, protein_ID, position, Group ) %>% spread(key=Cleave, value=Value) %>%
-    group_by(Group)  %>%
-    mutate( signal = PepSeq::standardize(cleaved, uncleaved,                ##
-                                         type = standardization_method,     ## standardize to combine cleaved/uncleaved values
-                                         scale = scale ) )                  ##
+    group_by( index, protein_ID, position, Group ) %>% spread(key=Cleave, value=Value) %>%  # The slow part of this function is the spread command...
+    group_by(Group) %>%
+    full_standardize( type = standardization_method, scale=scale, trim_proportion = trim_proportion )
+  # %>%
+  #   mutate( signal = PepSeq::standardize(cleaved, uncleaved,                ##
+  #                                        type = standardization_method,     ## standardize to combine cleaved/uncleaved values
+  #                                        scale = scale ) )                  ##
 
 
   df2 <- df[-Index, ] %>%
     mutate( cleaved = NA, uncleaved = NA ) %>%
     rename(signal = Value, Group = Type ) %>%
     select( index, protein_ID, position, Group, cleaved, uncleaved, signal)
-
 
   out <- bind_rows( df1, df2 )
   return(out)

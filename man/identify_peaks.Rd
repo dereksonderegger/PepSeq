@@ -4,7 +4,7 @@
 \alias{identify_peaks}
 \title{Identify Peaks}
 \usage{
-identify_peaks(data, method = "PoT", param = NA, min_peak_length = 1,
+identify_peaks(data, method = "PoT", param = NA, min_peak_length = 2,
   merge_peak_gap = 2)
 }
 \arguments{

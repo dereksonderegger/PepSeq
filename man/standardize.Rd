@@ -4,8 +4,7 @@
 \alias{standardize}
 \title{Standardize counts relative to uncleaved counts.}
 \usage{
-standardize(cleaved, uncleaved, ref = NULL, type = "additive",
-  scale = TRUE)
+standardize(cleaved, uncleaved, ref = NULL, type = "additive")
 }
 \arguments{
 \item{cleaved}{The cleaved raw counts}

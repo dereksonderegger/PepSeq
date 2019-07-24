@@ -92,31 +92,21 @@ identify_peaks_aux <- function(x, y, method='PoT', param=NA, min_peak_length=1, 
 #' @return A data frame with columns for `Group`, `protein_ID`, `Peak`, `Start`, and `End`.
 #' @export
 identify_peaks <- function(data, # x='position', y='signal', protein='protein_ID', Group='Group',
-                               method='PoT', param=NA, min_peak_length=1, merge_peak_gap=2){
-
-  # x = 'position'
-  # y = 'signal'
-  # protein = 'protein_ID'
-  # Group = 'Group'
-
-  # convert the input column names into Symbols which can be used in dplyr stuff
-  # x = x %>% sym()
-  # y = y %>% sym() #%>% enquo()
-  # protein = protein %>% sym() #%>% enquo(protein)
-  # Group = Group %>% sym() # %>% enquo(Group)
+                               method='PoT', param=NA, min_peak_length=2, merge_peak_gap=2){
 
   data <- data %>% mutate( z = row_number() )
 
   if(method == 'PoT' ){
     # Add a column for the input parameter
     if( is.null(param) | any(is.na(param)) ){
-      message('Using default thresholds')
-      data <- data %>%
+      message('Using default thresholds:')
+      thresholds <- data %>%
         group_by( Group, protein_ID ) %>%
         mutate( q=rank(signal) / n(), logq = log(q)   ) %>%
-        filter( q >= .85 ) %>%
-        summarize(param = min(signal))  %>%
-        left_join(data, ., by=c('Group', 'protein_ID'))
+        filter( q >= .95 ) %>%
+        summarize(param = min(signal))
+      message(thresholds)
+      data <- left_join(data, thresholds, by=c('Group', 'protein_ID'))
     }else{
       data <- data %>% mutate(param = param)
     }

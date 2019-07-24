@@ -5,9 +5,9 @@
 \title{Reads an input pulldown .csv file and organizes it for visualization}
 \usage{
 import_pulldown(file, standardization_method = "additive",
-  read_indicator = "X", protein_column = "protein_ID",
-  position_column = "Peptide.start", Cleaved_Type_Indicators = c("Cl_",
-  "Un_"))
+  scale = TRUE, trim_proportion = 0.25, read_indicator = "X",
+  protein_column = "protein_ID", position_column = "Peptide.start",
+  Cleaved_Type_Indicators = c("Cl_", "Un_"))
 }
 \arguments{
 \item{file}{The input .csv, .xls, or .xlsx file. It can be a full path to a file or a
@@ -17,6 +17,12 @@ relative path from the current working directory.}
 counts are combined. Valid choices are 'additive' or
 'multiplicative'. The default is additive.}
 
+\item{scale}{Should we rescale the signal result so that the maximum signal
+is between 100 and 1000.}
+
+\item{trim_proportion}{In the rescaling, what percent of the large values should be
+removed to get to a background rate.}
+
 \item{read_indicator}{An argument that identifies what columns are responses
 to be plotted. This could be either a vector of integers
 or a character string (or vector of strings) that is at the beginning of all of the
@@ -25,9 +31,6 @@ column names of the response data.}
 \item{protein_column}{A character string indicating which column denotes the protein.}
 
 \item{position_column}{A character string indicating which column corresponds to the position within a protein.}
-
-\item{scale}{Should we rescale the signal result so that the maximum signal
-is between 100 and 1000.}
 }
 \description{
 This function is intended to be how users import data from a pulldown.

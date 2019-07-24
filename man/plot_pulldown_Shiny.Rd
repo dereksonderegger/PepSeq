@@ -8,8 +8,7 @@ plot_pulldown_Shiny(input, height = 400, peaks = FALSE,
   peak_method = "PoT", peak_param = NA)
 }
 \arguments{
-\item{input}{The input data frame  read in using the
-`import_pulldown()` function.}
+\item{input}{The input data frame  read in using the `import_pulldown()` function.}
 
 \item{height}{The height of the graph window (in pixels).}
 
